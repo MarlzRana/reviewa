@@ -164,9 +164,10 @@ export function createReviewaCommentController(
 				// Reply on existing thread — append to the same JSON file
 				const tracked = store.get(existingUuid);
 				if (tracked) {
+					tracked.commentTexts.push(reply.text);
 					const updatedData = {
 						...tracked.data,
-						content: tracked.data.content + '\n\n' + reply.text,
+						content: tracked.commentTexts.join('\n\n'),
 					};
 					CommentStore.saveComment(updatedData);
 					store.update(existingUuid, updatedData);
@@ -188,7 +189,55 @@ export function createReviewaCommentController(
 
 				CommentStore.saveComment(comment);
 				reply.thread.contextValue = uuid;
-				store.add(uuid, comment, reply.thread);
+				store.add(uuid, comment, reply.thread, [reply.text]);
+			}
+		}),
+	);
+
+	// Delete entire thread
+	context.subscriptions.push(
+		vscode.commands.registerCommand('reviewa.deleteThread', (thread: vscode.CommentThread) => {
+			const entry = store.findByThread(thread);
+			if (entry) {
+				const [uuid] = entry;
+				store.deleteFile(uuid);
+				store.delete(uuid);
+			}
+			thread.dispose();
+		}),
+	);
+
+	// Delete individual comment
+	context.subscriptions.push(
+		vscode.commands.registerCommand('reviewa.deleteComment', (comment: vscode.Comment) => {
+			const entry = store.findByComment(comment);
+			if (!entry) {
+				return;
+			}
+
+			const [uuid, tracked, index] = entry;
+
+			// Remove from commentTexts
+			tracked.commentTexts.splice(index, 1);
+
+			// Remove from thread UI
+			const updatedComments = [...tracked.thread.comments];
+			updatedComments.splice(index, 1);
+
+			if (updatedComments.length === 0) {
+				// Last comment deleted — remove thread entirely
+				store.deleteFile(uuid);
+				store.delete(uuid);
+				tracked.thread.dispose();
+			} else {
+				tracked.thread.comments = updatedComments;
+				// Update file store with remaining texts
+				const updatedData = {
+					...tracked.data,
+					content: tracked.commentTexts.join('\n\n'),
+				};
+				CommentStore.saveComment(updatedData);
+				store.update(uuid, updatedData);
 			}
 		}),
 	);

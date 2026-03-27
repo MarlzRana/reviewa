@@ -5,6 +5,7 @@ import { ReviewaComment, COMMENTS_DIR } from './types';
 export interface TrackedComment {
 	data: ReviewaComment;
 	thread: vscode.CommentThread;
+	commentTexts: string[];
 }
 
 export class CommentStore {
@@ -19,8 +20,8 @@ export class CommentStore {
 		fs.writeFileSync(filePath, JSON.stringify(comment, null, 2));
 	}
 
-	add(uuid: string, data: ReviewaComment, thread: vscode.CommentThread): void {
-		this.store.set(uuid, { data, thread });
+	add(uuid: string, data: ReviewaComment, thread: vscode.CommentThread, commentTexts: string[]): void {
+		this.store.set(uuid, { data, thread, commentTexts });
 	}
 
 	get(uuid: string): TrackedComment | undefined {
@@ -34,8 +35,36 @@ export class CommentStore {
 		}
 	}
 
+	findByThread(thread: vscode.CommentThread): [string, TrackedComment] | undefined {
+		for (const [uuid, tracked] of this.store) {
+			if (tracked.thread === thread) {
+				return [uuid, tracked];
+			}
+		}
+		return undefined;
+	}
+
 	delete(uuid: string): void {
 		this.store.delete(uuid);
+	}
+
+	findByComment(comment: vscode.Comment): [string, TrackedComment, number] | undefined {
+		for (const [uuid, tracked] of this.store) {
+			const index = tracked.thread.comments.indexOf(comment);
+			if (index !== -1) {
+				return [uuid, tracked, index];
+			}
+		}
+		return undefined;
+	}
+
+	deleteFile(uuid: string): void {
+		const filePath = `${COMMENTS_DIR}/${uuid}.json`;
+		try {
+			fs.unlinkSync(filePath);
+		} catch {
+			// Already deleted
+		}
 	}
 
 	deleteAllPendingFiles(): void {
