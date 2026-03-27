@@ -3,6 +3,12 @@
   "displayName": "Reviewa",
   "description": "Leave in-line comments on a git diff available to your favourite coding agents to resolve",
   "version": "0.0.1",
+  "publisher": "marlzrana",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MarlzRana/reviewa"
+  },
   "engines": {
     "vscode": "^1.110.0"
   },
