@@ -28,6 +28,16 @@
         "command": "reviewa.deleteComment",
         "title": "Delete Comment",
         "icon": "$(trash)"
+      },
+      {
+        "command": "reviewa.editComment",
+        "title": "Edit Comment",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "reviewa.saveComment",
+        "title": "Save Comment",
+        "icon": "$(check)"
       }
     ],
     "menus": {
@@ -43,6 +53,14 @@
         {
           "command": "reviewa.deleteComment",
           "when": "false"
+        },
+        {
+          "command": "reviewa.editComment",
+          "when": "false"
+        },
+        {
+          "command": "reviewa.saveComment",
+          "when": "false"
         }
       ],
       "comments/commentThread/context": [
@@ -50,6 +68,13 @@
           "command": "reviewa.createComment",
           "group": "inline",
           "when": "commentController == reviewa"
+        }
+      ],
+      "comments/comment/context": [
+        {
+          "command": "reviewa.saveComment",
+          "group": "inline",
+          "when": "commentController == reviewa && comment == pending"
         }
       ],
       "comments/commentThread/title": [
@@ -60,6 +85,11 @@
         }
       ],
       "comments/comment/title": [
+        {
+          "command": "reviewa.editComment",
+          "group": "inline",
+          "when": "commentController == reviewa && comment == pending"
+        },
         {
           "command": "reviewa.deleteComment",
           "group": "inline",

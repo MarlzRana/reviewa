@@ -153,6 +153,7 @@ export function createReviewaCommentController(
 				mode: vscode.CommentMode.Preview,
 				author,
 				label: 'Pending',
+				contextValue: 'pending',
 			};
 
 			reply.thread.comments = [...reply.thread.comments, newVscodeComment];
@@ -239,6 +240,50 @@ export function createReviewaCommentController(
 				CommentStore.saveComment(updatedData);
 				store.update(uuid, updatedData);
 			}
+		}),
+	);
+
+	// Edit a pending comment
+	context.subscriptions.push(
+		vscode.commands.registerCommand('reviewa.editComment', (comment: vscode.Comment) => {
+			const entry = store.findByComment(comment);
+			if (!entry) {
+				return;
+			}
+
+			const [, tracked, index] = entry;
+			const updatedComments = [...tracked.thread.comments];
+			updatedComments[index] = { ...comment, mode: vscode.CommentMode.Editing };
+			tracked.thread.comments = updatedComments;
+		}),
+	);
+
+	// Save an edited comment
+	context.subscriptions.push(
+		vscode.commands.registerCommand('reviewa.saveComment', (comment: vscode.Comment) => {
+			const entry = store.findByComment(comment);
+			if (!entry) {
+				return;
+			}
+
+			const [uuid, tracked, index] = entry;
+			const newText = typeof comment.body === 'string' ? comment.body : comment.body.value;
+
+			// Update in-memory text array
+			tracked.commentTexts[index] = newText;
+
+			// Update UI
+			const updatedComments = [...tracked.thread.comments];
+			updatedComments[index] = { ...comment, mode: vscode.CommentMode.Preview };
+			tracked.thread.comments = updatedComments;
+
+			// Update file store
+			const updatedData = {
+				...tracked.data,
+				content: tracked.commentTexts.join('\n\n'),
+			};
+			CommentStore.saveComment(updatedData);
+			store.update(uuid, updatedData);
 		}),
 	);
 
