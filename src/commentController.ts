@@ -2,9 +2,86 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
-import { ReviewaComment } from './types';
-import { parseGitUri, getGitRepoRoot, isFileWithGitChanges } from './gitUtils';
+import { ReviewaComment, CommentSide } from './types';
+import { parseGitUri, getGitRepoRoot } from './gitUtils';
 import { CommentStore } from './commentStore';
+
+async function getGitHubAuthor(): Promise<vscode.CommentAuthorInformation> {
+	try {
+		const session = await vscode.authentication.getSession('github', ['read:user'], { createIfNone: false });
+		if (session) {
+			return {
+				name: session.account.label,
+				iconPath: vscode.Uri.parse(`https://avatars.githubusercontent.com/u/${session.account.id}`),
+			};
+		}
+	} catch {
+		// Not logged in or permission denied
+	}
+	return { name: 'You' };
+}
+
+function findDiffTab(uri: vscode.Uri): vscode.TabInputTextDiff | undefined {
+	for (const group of vscode.window.tabGroups.all) {
+		for (const tab of group.tabs) {
+			if (tab.input instanceof vscode.TabInputTextDiff) {
+				if (tab.input.modified.toString() === uri.toString() || tab.input.original.toString() === uri.toString()) {
+					return tab.input;
+				}
+			}
+		}
+	}
+	return undefined;
+}
+
+async function detectSide(uri: vscode.Uri, lineNumber: number): Promise<CommentSide> {
+	const diffTab = findDiffTab(uri);
+	if (!diffTab) {
+		return 'file';
+	}
+
+	// We're in a diff view — determine if the line is changed or just context
+	const isOldSide = diffTab.original.toString() === uri.toString();
+	const otherUri = isOldSide ? diffTab.modified : diffTab.original;
+
+	try {
+		const thisDoc = await vscode.workspace.openTextDocument(uri);
+		const otherDoc = await vscode.workspace.openTextDocument(otherUri);
+		const thisLine = thisDoc.lineAt(lineNumber - 1).text;
+
+		// Check if the same line content exists at the same position in the other side
+		if (lineNumber - 1 < otherDoc.lineCount) {
+			const otherLine = otherDoc.lineAt(lineNumber - 1).text;
+			if (thisLine === otherLine) {
+				return 'file'; // Unchanged context line
+			}
+		}
+	} catch {
+		// If we can't read either document, fall back to position-based guess
+	}
+
+	return isOldSide ? 'removal' : 'addition';
+}
+
+async function readLineContent(uri: vscode.Uri, lineNumber: number, absPath: string): Promise<string> {
+	if (uri.scheme === 'git') {
+		// Read from the git document to get the old version's content
+		try {
+			const doc = await vscode.workspace.openTextDocument(uri);
+			return doc.lineAt(lineNumber - 1).text;
+		} catch {
+			// Fall through to disk read
+		}
+	}
+
+	try {
+		const fileContent = fs.readFileSync(absPath, 'utf-8');
+		const lines = fileContent.split('\n');
+		return lines[lineNumber - 1] ?? '';
+	} catch {
+		return '';
+	}
+}
 
 export function createReviewaCommentController(
 	context: vscode.ExtensionContext,
@@ -13,20 +90,18 @@ export function createReviewaCommentController(
 	const controller = vscode.comments.createCommentController('reviewa', 'Reviewa');
 	context.subscriptions.push(controller);
 
+	const authorPromise = getGitHubAuthor();
+
 	controller.options = {
-		prompt: 'Write a comment for your coding agent to resolve...',
+		prompt: 'Leave a comment',
 		placeHolder: 'Describe what should be changed here...',
 	};
 
 	controller.commentingRangeProvider = {
-		async provideCommentingRanges(document: vscode.TextDocument): Promise<vscode.Range[] | undefined> {
+		provideCommentingRanges(document: vscode.TextDocument): vscode.Range[] | undefined {
 			const { scheme } = document.uri;
 
-			if (scheme === 'git') {
-				return [new vscode.Range(0, 0, document.lineCount - 1, 0)];
-			}
-
-			if (scheme === 'file' && await isFileWithGitChanges(document.uri)) {
+			if (scheme === 'git' || scheme === 'file') {
 				return [new vscode.Range(0, 0, document.lineCount - 1, 0)];
 			}
 
@@ -69,42 +144,52 @@ export function createReviewaCommentController(
 				return;
 			}
 			const lineNumber = range.start.line + 1;
+			const lineContent = await readLineContent(uri, lineNumber, absPath);
+			const side = await detectSide(uri, lineNumber);
 
-			let lineContent = '';
-			try {
-				const fileContent = fs.readFileSync(absPath, 'utf-8');
-				const lines = fileContent.split('\n');
-				lineContent = lines[lineNumber - 1] ?? '';
-			} catch {
-				// File may not exist on disk (e.g. deleted file in diff)
-			}
-
-			const uuid = crypto.randomUUID();
-			const comment: ReviewaComment = {
-				uuid,
-				status: 'pending',
-				created_at: new Date().toISOString(),
-				workspace: repoRoot,
-				abs_path: absPath,
-				line_number: lineNumber,
-				line_content: lineContent,
-				line_content_hash: CommentStore.hashLineContent(lineContent),
-				content: reply.text,
-			};
-
-			CommentStore.saveComment(comment);
-
-			const newComment: vscode.Comment = {
+			const author = await authorPromise;
+			const newVscodeComment: vscode.Comment = {
 				body: reply.text,
 				mode: vscode.CommentMode.Preview,
-				author: { name: 'Reviewa' },
+				author,
+				label: 'Pending',
 			};
 
-			reply.thread.comments = [...reply.thread.comments, newComment];
+			reply.thread.comments = [...reply.thread.comments, newVscodeComment];
 			reply.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Expanded;
-			reply.thread.canReply = false;
+			reply.thread.label = 'Pending comments';
 
-			store.add(uuid, comment, reply.thread);
+			const existingUuid = reply.thread.contextValue;
+			if (existingUuid) {
+				// Reply on existing thread — append to the same JSON file
+				const tracked = store.get(existingUuid);
+				if (tracked) {
+					const updatedData = {
+						...tracked.data,
+						content: tracked.data.content + '\n\n' + reply.text,
+					};
+					CommentStore.saveComment(updatedData);
+					store.update(existingUuid, updatedData);
+				}
+			} else {
+				// First comment on this line — create new JSON file
+				const uuid = crypto.randomUUID();
+				const comment: ReviewaComment = {
+					uuid,
+					status: 'pending',
+					created_at: new Date().toISOString(),
+					workspace: repoRoot,
+					abs_path: absPath,
+					line_number: lineNumber,
+					line_content: lineContent,
+					side,
+					content: reply.text,
+				};
+
+				CommentStore.saveComment(comment);
+				reply.thread.contextValue = uuid;
+				store.add(uuid, comment, reply.thread);
+			}
 		}),
 	);
 

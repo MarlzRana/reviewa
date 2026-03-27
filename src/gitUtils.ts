@@ -6,20 +6,7 @@ interface GitUriQuery {
 }
 
 interface GitApi {
-	getRepository(uri: vscode.Uri): GitRepository | undefined;
-}
-
-interface GitRepository {
-	rootUri: vscode.Uri;
-	state: {
-		workingTreeChanges: GitChange[];
-		indexChanges: GitChange[];
-		untrackedChanges?: GitChange[];
-	};
-}
-
-interface GitChange {
-	uri: vscode.Uri;
+	getRepository(uri: vscode.Uri): { rootUri: vscode.Uri } | undefined;
 }
 
 let cachedGitApi: GitApi | undefined;
@@ -66,25 +53,4 @@ export async function getGitRepoRoot(uri: vscode.Uri): Promise<string | undefine
 
 	const repository = git.getRepository(uri);
 	return repository?.rootUri.fsPath;
-}
-
-export async function isFileWithGitChanges(uri: vscode.Uri): Promise<boolean> {
-	const git = await getGitApi();
-	if (!git) {
-		return false;
-	}
-
-	const repository = git.getRepository(uri);
-	if (!repository) {
-		return false;
-	}
-
-	const filePath = uri.fsPath;
-	const allChanges = [
-		...repository.state.workingTreeChanges,
-		...repository.state.indexChanges,
-		...(repository.state.untrackedChanges ?? []),
-	];
-
-	return allChanges.some(change => change.uri.fsPath === filePath);
 }

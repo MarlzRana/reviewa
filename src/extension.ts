@@ -4,14 +4,18 @@ import { createReviewaCommentController } from './commentController';
 import { createFileWatcher } from './fileWatcher';
 import { installHookScript, registerHook } from './hookManager';
 
+let store: CommentStore;
+
 export function activate(context: vscode.ExtensionContext) {
 	CommentStore.ensureDirectoryExists();
 	installHookScript();
 	registerHook();
 
-	const store = new CommentStore();
+	store = new CommentStore();
 	createReviewaCommentController(context, store);
 	createFileWatcher(context, store);
 }
 
-export function deactivate() {}
+export function deactivate() {
+	store?.deleteAllPendingFiles();
+}

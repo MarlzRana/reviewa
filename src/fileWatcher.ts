@@ -27,9 +27,16 @@ export function createFileWatcher(
 				return;
 			}
 
-			tracked.thread.state = vscode.CommentThreadState.Resolved;
-			tracked.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed;
-			tracked.thread.label = 'Processed by Claude';
+			tracked.thread.comments = tracked.thread.comments.map(c => ({
+				...c,
+				label: 'Processed',
+			}));
+			const hasPending = tracked.thread.comments.some(c => c.label === 'Pending');
+			tracked.thread.label = hasPending ? 'Pending comments' : 'All comments processed';
+			if (!hasPending) {
+				tracked.thread.state = vscode.CommentThreadState.Resolved;
+				tracked.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed;
+			}
 			store.delete(uuid);
 		});
 	} catch {

@@ -1,6 +1,8 @@
 import * as path from 'path';
 import * as os from 'os';
 
+export type CommentSide = 'file' | 'addition' | 'removal';
+
 export interface ReviewaComment {
 	uuid: string;
 	status: 'pending' | 'processed';
@@ -9,7 +11,7 @@ export interface ReviewaComment {
 	abs_path: string;
 	line_number: number;
 	line_content: string;
-	line_content_hash: string;
+	side: CommentSide;
 	content: string;
 }
 

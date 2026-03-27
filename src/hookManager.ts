@@ -8,16 +8,15 @@ const HOOK_JS_CONTENT = `#!/usr/bin/env node
 
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 
 const COMMENTS_DIR = path.join(require('os').homedir(), '.reviewa', 'v1', 'comments');
 
-function hashLineContent(content) {
-	return crypto.createHash('sha256').update(content).digest('hex').substring(0, 6);
+function formatLineContent(comment) {
+	const prefix = comment.side === 'addition' ? '+' : comment.side === 'removal' ? '-' : '';
+	return prefix + comment.line_content;
 }
 
 async function main() {
-	// Read stdin
 	const chunks = [];
 	for await (const chunk of process.stdin) {
 		chunks.push(chunk);
@@ -34,7 +33,7 @@ async function main() {
 		process.exit(0);
 	}
 
-	const validComments = [];
+	const matchedComments = [];
 
 	for (const file of files) {
 		const filePath = path.join(COMMENTS_DIR, file);
@@ -45,61 +44,34 @@ async function main() {
 			continue;
 		}
 
-		// Only process comments for this workspace
 		if (!comment.abs_path || !comment.abs_path.startsWith(cwd)) {
 			continue;
 		}
 
-		// Stale check: verify line content still matches
-		try {
-			const fileContent = fs.readFileSync(comment.abs_path, 'utf-8');
-			const lines = fileContent.split('\\n');
-			const currentLine = lines[comment.line_number - 1] || '';
-			const currentHash = hashLineContent(currentLine);
-
-			if (currentHash !== comment.line_content_hash) {
-				// Stale comment — line has changed, delete silently
-				fs.unlinkSync(filePath);
-				continue;
-			}
-		} catch {
-			// File no longer exists or unreadable — delete stale comment
-			fs.unlinkSync(filePath);
-			continue;
-		}
-
-		validComments.push({ comment, filePath });
+		matchedComments.push({ comment, filePath });
 	}
 
-	if (validComments.length === 0) {
+	if (matchedComments.length === 0) {
 		process.exit(0);
 	}
 
-	// Build additionalContext
-	const lines = ['=== Reviewa: Inline Code Review Comments ===', ''];
-	for (const { comment } of validComments) {
+	const parts = [];
+	for (const { comment } of matchedComments) {
 		const relPath = comment.abs_path.startsWith(cwd)
 			? comment.abs_path.slice(cwd.length + 1)
 			: comment.abs_path;
-		lines.push('File: ' + relPath);
-		lines.push('Line ' + comment.line_number + ': ' + comment.line_content);
-		lines.push('Comment: ' + comment.content);
-		lines.push('---');
-		lines.push('');
+		const formatted = formatLineContent(comment);
+		parts.push('In \\\`' + relPath + '\\\` at line ' + comment.line_number + ':\\n\\\`\\\`\\\`\\n' + formatted + '\\n\\\`\\\`\\\`\\n' + comment.content);
 	}
 
-	const additionalContext = lines.join('\\n');
+	const additionalContext = parts.join('\\n\\n');
 
-	// Delete consumed comment files
-	for (const { filePath } of validComments) {
+	for (const { filePath } of matchedComments) {
 		try {
 			fs.unlinkSync(filePath);
-		} catch {
-			// Ignore — may have already been cleaned up
-		}
+		} catch {}
 	}
 
-	// Output structured JSON for Claude Code
 	const output = {
 		hookSpecificOutput: {
 			hookEventName: 'UserPromptSubmit',
