@@ -54,5 +54,10 @@ npm run watch      # dev mode with file watching
 - `src/commentStore.ts` — in-memory store + JSON file persistence, cleanup on deactivation
 - `src/types.ts` — `ReviewaComment` interface, `CommentSide` type, directory constants
 
+## Resources
+- VS Code Extension API docs: !`echo $HOME`/gh/microsoft/vscode-docs
+- Claude Code Hooks documentation: !`echo $HOME`/gh/ericbuess/claude-code-docs
+- GitHub Pull Request extension (reference for Comment Controller patterns and git URI resolution): !`echo $HOME`/gh/Microsoft/vscode-pull-request-github
+
 ## Testing
 Launch Extension Development Host (F5), open any file or diff, and leave comments via the gutter icon. Comments work in normal file views, split diff view (both sides), and inline diff view (modified side only — removed lines in inline mode are a VS Code limitation).
