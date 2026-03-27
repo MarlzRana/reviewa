@@ -1,0 +1,64 @@
+## Mission
+Create a VS Code extension called "Reviewa" that lets developers leave inline code review comments on their local git diffs, which are automatically injected into Claude Code's context to be resolved.
+
+The workflow:
+1. Developer opens the Source Control tab in VS Code and views their local file diffs
+2. Developer leaves inline comments on any line in the diff (edited or not) — exactly like leaving review comments on a GitHub PR
+3. Developer submits their next prompt in Claude Code CLI as normal
+4. Claude receives the pending comments as additional context and resolves them
+5. Comments are marked as resolved and collapsed in the diff viewer so the developer can see what was picked up
+
+## Resources
+- VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
+- Claude Code Hooks documentation: /Users/marlzrana/gh/ericbuess/claude-code-docs
+- GitHub Pull Request extension (provided, for reference on Comment Controller patterns and git URI resolution): /Users/marlzrana/gh/Microsoft/vscode-pull-request-github
+
+## Architecture
+
+### Comment Storage
+Comments are stored as individual JSON files:
+```
+~/.reviewa/
+  v1/
+    comments/
+      <uuid>.json
+      <uuid>.json
+```
+
+Schema:
+```json
+{
+  "uuid": "a3f2bc91-...",
+  "status": "pending",
+  "created_at": "2026-03-27T10:00:00Z",
+  "workspace": "/Users/alice/projects/my-app",
+  "abs_path": "/Users/alice/projects/my-app/src/auth/login.ts",
+  "line_number": 42,
+  "line_content": "const token = jwt.sign(payload, secret)",
+  "line_content_hash": "a3f2d9...",
+  "content": "Add expiresIn: '1h' to jwt.sign options"
+}
+```
+
+Status values: `pending` | `processed`
+
+### VS Code Extension
+- Uses the VS Code Comment Controller API to render a GitHub-style inline comment UI
+- Comments are restricted to the Source Control diff viewer only (`scheme === "git"`) — the comment gutter never appears when viewing files normally in the editor
+- Git URIs must be resolved to real `abs_path` file paths before writing the comment JSON — reference the GitHub Pull Request extension for this pattern
+- On activation: ensures `~/.reviewa/v1/comments/` exists
+- On activation: registers the `UserPromptSubmit` hook in `~/.claude/settings.json` if not already present
+- Maintains an in-memory `Map<uuid, { comment, thread: vscode.CommentThread }>` as the source of truth for the UI
+- On comment submit: writes a new comment JSON file to `~/.reviewa/v1/comments/` and adds it to the in-memory store with `status: "pending"`
+- Watches `~/.reviewa/v1/comments/` for deletions — when a file is deleted, the corresponding in-memory entry is marked `status: "processed"`, and the thread is collapsed and marked as resolved so the developer can see it was picked up by Claude
+
+### Claude Code Hooks
+One hook registered in `~/.claude/settings.json` on extension activation:
+- `UserPromptSubmit`: scans comments dir for comments whose `abs_path` starts with `cwd`. Stale comments (line content hash no longer matches) are deleted and skipped. Valid comments are injected as `additionalContext` then deleted.
+
+## Verification
+- Comment gutter only appears in the Source Control diff viewer, not in normal file editor tabs
+- Leave a comment on any line in a diff in VS Code → JSON file appears in `~/.reviewa/v1/comments/`, thread appears in diff viewer with `status: "pending"`
+- Submit a prompt in Claude Code from the same workspace → comments appear in context, JSON files are deleted, in-memory status flips to `processed`, threads collapse and display as resolved in the diff viewer
+- Stale comments (line has changed) are deleted silently and do not appear in context
+- Comments from other workspaces are not injected when Claude Code is run from a different directory
