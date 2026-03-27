@@ -57,9 +57,7 @@ async function main() {
 
 	const parts = [];
 	for (const { comment } of matchedComments) {
-		const relPath = comment.abs_path.startsWith(cwd)
-			? comment.abs_path.slice(cwd.length + 1)
-			: comment.abs_path;
+		const relPath = path.relative(cwd, comment.abs_path);
 		const formatted = formatLineContent(comment);
 		parts.push('In \\\`' + relPath + '\\\` at line ' + comment.line_number + ':\\n\\\`\\\`\\\`\\n' + formatted + '\\n\\\`\\\`\\\`\\n' + comment.content);
 	}
