@@ -7,6 +7,15 @@ All notable changes to the Reviewa extension will be documented in this file.
 ### Added
 
 - Gemini CLI hook support — review comments are now injected into Google Gemini CLI via a `BeforeAgent` hook registered in `~/.gemini/settings.json`
+- CLI detection — hooks are only registered for CLIs that are installed on PATH
+
+### Fixed
+
+- Follow-up comments on processed threads were not being saved to disk
+
+### Changed
+
+- Consistent naming: "Claude Code", "Codex", "Gemini CLI" throughout codebase and docs
 
 ## [0.0.3] - 2026-03-28
 
