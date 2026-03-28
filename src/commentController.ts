@@ -238,14 +238,26 @@ export function createReviewaCommentController(
 				tracked.thread.dispose();
 			} else {
 				tracked.thread.comments = updatedComments;
-				// Update file store with remaining texts
-				const updatedData = {
-					...tracked.data,
-					status: 'pending' as const,
-					content: tracked.commentTexts.join('\n\n'),
-				};
-				CommentStore.saveComment(updatedData);
-				store.update(uuid, updatedData);
+				const hasPending = updatedComments.some(c => c.label === 'Pending');
+				tracked.thread.label = hasPending ? 'Pending comments' : 'All comments processed';
+				if (hasPending) {
+					// Update file store with remaining pending texts
+					const pendingTexts = updatedComments
+						.map((c, i) => ({ label: c.label, text: tracked.commentTexts[i] }))
+						.filter(c => c.label === 'Pending')
+						.map(c => c.text);
+					const updatedData = {
+						...tracked.data,
+						status: 'pending' as const,
+						content: pendingTexts.join('\n\n'),
+					};
+					CommentStore.saveComment(updatedData);
+					store.update(uuid, updatedData);
+				} else {
+					// Only processed comments remain — remove file from disk
+					store.deleteFile(uuid);
+					tracked.data = { ...tracked.data, status: 'processed' };
+				}
 			}
 		}),
 	);

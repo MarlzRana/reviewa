@@ -10,6 +10,7 @@ export interface TrackedComment {
 
 export class CommentStore {
 	private readonly store = new Map<string, TrackedComment>();
+	private readonly suppressedDeletions = new Set<string>();
 
 	static ensureDirectoryExists(): void {
 		fs.mkdirSync(COMMENTS_DIR, { recursive: true });
@@ -58,7 +59,16 @@ export class CommentStore {
 		return undefined;
 	}
 
+	suppressWatcher(uuid: string): void {
+		this.suppressedDeletions.add(uuid);
+	}
+
+	consumeSuppression(uuid: string): boolean {
+		return this.suppressedDeletions.delete(uuid);
+	}
+
 	deleteFile(uuid: string): void {
+		this.suppressedDeletions.add(uuid);
 		const filePath = `${COMMENTS_DIR}/${uuid}.json`;
 		try {
 			fs.unlinkSync(filePath);

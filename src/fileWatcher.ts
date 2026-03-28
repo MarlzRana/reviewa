@@ -22,6 +22,9 @@ export function createFileWatcher(
 			}
 
 			const uuid = filename.replace('.json', '');
+			if (store.consumeSuppression(uuid)) {
+				return; // Deletion was initiated by the UI, not a hook
+			}
 			const tracked = store.get(uuid);
 			if (!tracked) {
 				return;
