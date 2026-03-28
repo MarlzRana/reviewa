@@ -2,13 +2,13 @@ import * as vscode from 'vscode';
 import { CommentStore } from './commentStore';
 import { createReviewaCommentController } from './commentController';
 import { createFileWatcher } from './fileWatcher';
-import { installHookScript, registerHooks } from './hookManager';
+import { installHookScripts, registerHooks } from './hookManager';
 
 let store: CommentStore;
 
 export function activate(context: vscode.ExtensionContext) {
 	CommentStore.ensureDirectoryExists();
-	installHookScript();
+	installHookScripts();
 	registerHooks();
 
 	store = new CommentStore();
