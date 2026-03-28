@@ -166,9 +166,15 @@ export function createReviewaCommentController(
 				const tracked = store.get(existingUuid);
 				if (tracked) {
 					tracked.commentTexts.push(reply.text);
+					// Only include pending comment texts in the file
+					const pendingTexts = reply.thread.comments
+						.map((c, i) => ({ label: c.label, text: tracked.commentTexts[i] }))
+						.filter(c => c.label === 'Pending')
+						.map(c => c.text);
 					const updatedData = {
 						...tracked.data,
-						content: tracked.commentTexts.join('\n\n'),
+						status: 'pending' as const,
+						content: pendingTexts.join('\n\n'),
 					};
 					CommentStore.saveComment(updatedData);
 					store.update(existingUuid, updatedData);
