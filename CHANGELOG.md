@@ -2,6 +2,20 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.5] - 2026-03-28
+
+### Added
+
+- Re-pending state — toggle processed comments back to re-pending so they are sent to the coding agent again
+- Edit processed comments — editing a processed comment auto-sets it to re-pending
+- Toggle icon `$(history)` on processed and re-pending comments
+
+### Fixed
+
+- Thread label not updating when deleting the last pending comment from a mixed thread
+- Thread collapsing when deleting comments via UI (now only collapses when a coding agent consumes)
+- Processed comment text being included in context file alongside pending follow-ups
+
 ## [0.0.4] - 2026-03-28
 
 ### Added
