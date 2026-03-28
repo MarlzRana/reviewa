@@ -1,6 +1,6 @@
 # Reviewa
 
-Leave inline code review comments on any file or git diff in VS Code, automatically injected into Claude Code's context to be resolved.
+Leave inline code review comments on any file or git diff in VS Code, automatically injected into Claude Code's or Codex CLI's context to be resolved.
 
 ## Features
 
@@ -12,19 +12,20 @@ Leave inline code review comments on any file or git diff in VS Code, automatica
 - **Status tracking** — each comment shows a Pending/Processed label; threads show "Pending comments" or "All comments processed"
 - **GitHub identity** — if signed into GitHub in VS Code, your username and avatar appear on comments
 - **Claude Code integration** — pending comments are automatically injected into Claude Code's context via a `UserPromptSubmit` hook when you submit your next prompt
-- **Auto-cleanup** — comments are deleted from disk after Claude processes them; all pending comments are cleaned up when the workspace closes
+- **Codex CLI integration** — pending comments are also injected into OpenAI Codex CLI's context via a Python `UserPromptSubmit` hook
+- **Auto-cleanup** — comments are deleted from disk after they are processed; all pending comments are cleaned up when the workspace closes
 
 ## How it works
 
 1. Open any file or diff in VS Code
 2. Click the comment icon in the gutter to leave a comment
-3. Submit your next prompt in Claude Code from the same workspace
-4. Claude receives your comments as additional context and resolves them
+3. Submit your next prompt in Claude Code or Codex CLI from the same workspace
+4. Your coding agent receives your comments as additional context and resolves them
 5. Comments are marked as processed and threads collapse in VS Code
 
 ## Comment context format
 
-Comments are injected into Claude's context in this format:
+Comments are injected into your coding agent's context in this format:
 
 In `src/foo.ts` at line 42:
 ```
@@ -37,7 +38,7 @@ Lines are prefixed with `+` for additions, `-` for removals, or no prefix for no
 ## Requirements
 
 - VS Code 1.110.0 or later
-- Claude Code CLI installed with hooks support
+- Claude Code CLI and/or Codex CLI installed with hooks support
 
 ## Known Issues
 

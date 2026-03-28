@@ -2,7 +2,7 @@
   "name": "reviewa",
   "displayName": "Reviewa",
   "description": "Leave in-line comments on a git diff available to your favourite coding agents to resolve",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "marlzrana",
   "license": "MIT",
   "repository": {
