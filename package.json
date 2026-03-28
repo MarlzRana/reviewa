@@ -14,7 +14,19 @@
   },
   "icon": "images/icon.png",
   "categories": [
-    "Other"
+    "AI"
+  ],
+  "keywords": [
+    "code review",
+    "inline comments",
+    "diff",
+    "claude",
+    "codex",
+    "gemini",
+    "ai",
+    "coding agent",
+    "review",
+    "comments"
   ],
   "activationEvents": [
     "onStartupFinished"
