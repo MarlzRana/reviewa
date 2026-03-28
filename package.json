@@ -45,6 +45,11 @@
         "command": "reviewa.saveComment",
         "title": "Save Comment",
         "icon": "$(check)"
+      },
+      {
+        "command": "reviewa.toggleRepending",
+        "title": "Toggle Re-pending",
+        "icon": "$(history)"
       }
     ],
     "menus": {
@@ -68,6 +73,10 @@
         {
           "command": "reviewa.saveComment",
           "when": "false"
+        },
+        {
+          "command": "reviewa.toggleRepending",
+          "when": "false"
         }
       ],
       "comments/commentThread/context": [
@@ -81,7 +90,7 @@
         {
           "command": "reviewa.saveComment",
           "group": "inline",
-          "when": "commentController == reviewa && comment == pending"
+          "when": "commentController == reviewa && comment =~ /^(pending|repending|processed)$/"
         }
       ],
       "comments/commentThread/title": [
@@ -93,9 +102,14 @@
       ],
       "comments/comment/title": [
         {
+          "command": "reviewa.toggleRepending",
+          "group": "inline",
+          "when": "commentController == reviewa && comment =~ /^(processed|repending)$/"
+        },
+        {
           "command": "reviewa.editComment",
           "group": "inline",
-          "when": "commentController == reviewa && comment == pending"
+          "when": "commentController == reviewa && comment =~ /^(pending|repending|processed)$/"
         },
         {
           "command": "reviewa.deleteComment",

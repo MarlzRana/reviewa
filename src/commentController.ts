@@ -83,6 +83,17 @@ async function readLineContent(uri: vscode.Uri, lineNumber: number, absPath: str
 	}
 }
 
+function isActionable(c: vscode.Comment): boolean {
+	return c.label === 'Pending' || c.label === 'Re-pending';
+}
+
+function getActionableTexts(comments: readonly vscode.Comment[], commentTexts: string[]): string[] {
+	return comments
+		.map((c, i) => ({ actionable: isActionable(c), text: commentTexts[i] }))
+		.filter(c => c.actionable)
+		.map(c => c.text);
+}
+
 export function createReviewaCommentController(
 	context: vscode.ExtensionContext,
 	store: CommentStore,
@@ -166,15 +177,11 @@ export function createReviewaCommentController(
 				const tracked = store.get(existingUuid);
 				if (tracked) {
 					tracked.commentTexts.push(reply.text);
-					// Only include pending comment texts in the file
-					const pendingTexts = reply.thread.comments
-						.map((c, i) => ({ label: c.label, text: tracked.commentTexts[i] }))
-						.filter(c => c.label === 'Pending')
-						.map(c => c.text);
+					const actionableTexts = getActionableTexts(reply.thread.comments, tracked.commentTexts);
 					const updatedData = {
 						...tracked.data,
 						status: 'pending' as const,
-						content: pendingTexts.join('\n\n'),
+						content: actionableTexts.join('\n\n'),
 					};
 					CommentStore.saveComment(updatedData);
 					store.update(existingUuid, updatedData);
@@ -238,18 +245,14 @@ export function createReviewaCommentController(
 				tracked.thread.dispose();
 			} else {
 				tracked.thread.comments = updatedComments;
-				const hasPending = updatedComments.some(c => c.label === 'Pending');
-				tracked.thread.label = hasPending ? 'Pending comments' : 'All comments processed';
-				if (hasPending) {
-					// Update file store with remaining pending texts
-					const pendingTexts = updatedComments
-						.map((c, i) => ({ label: c.label, text: tracked.commentTexts[i] }))
-						.filter(c => c.label === 'Pending')
-						.map(c => c.text);
+				const hasActionable = updatedComments.some(isActionable);
+				tracked.thread.label = hasActionable ? 'Pending comments' : 'All comments processed';
+				if (hasActionable) {
+					const actionableTexts = getActionableTexts(updatedComments, tracked.commentTexts);
 					const updatedData = {
 						...tracked.data,
 						status: 'pending' as const,
-						content: pendingTexts.join('\n\n'),
+						content: actionableTexts.join('\n\n'),
 					};
 					CommentStore.saveComment(updatedData);
 					store.update(uuid, updatedData);
@@ -291,18 +294,68 @@ export function createReviewaCommentController(
 			// Update in-memory text array
 			tracked.commentTexts[index] = newText;
 
+			// If saving a processed comment, auto-set to re-pending
+			const wasProcessed = comment.contextValue === 'processed';
+			const updatedComment = wasProcessed
+				? { ...comment, mode: vscode.CommentMode.Preview, label: 'Re-pending', contextValue: 'repending' }
+				: { ...comment, mode: vscode.CommentMode.Preview };
+
 			// Update UI
 			const updatedComments = [...tracked.thread.comments];
-			updatedComments[index] = { ...comment, mode: vscode.CommentMode.Preview };
+			updatedComments[index] = updatedComment;
 			tracked.thread.comments = updatedComments;
+			tracked.thread.label = 'Pending comments';
 
-			// Update file store
+			// Update file store with actionable texts only
+			const actionableTexts = getActionableTexts(updatedComments, tracked.commentTexts);
 			const updatedData = {
 				...tracked.data,
-				content: tracked.commentTexts.join('\n\n'),
+				status: 'pending' as const,
+				content: actionableTexts.join('\n\n'),
 			};
 			CommentStore.saveComment(updatedData);
 			store.update(uuid, updatedData);
+		}),
+	);
+
+	// Toggle re-pending state
+	context.subscriptions.push(
+		vscode.commands.registerCommand('reviewa.toggleRepending', (comment: vscode.Comment) => {
+			const entry = store.findByComment(comment);
+			if (!entry) {
+				return;
+			}
+
+			const [uuid, tracked, index] = entry;
+			const updatedComments = [...tracked.thread.comments];
+			const isRepending = comment.contextValue === 'repending';
+
+			if (isRepending) {
+				// Re-pending → Processed
+				updatedComments[index] = { ...comment, label: 'Processed', contextValue: 'processed' };
+			} else {
+				// Processed → Re-pending
+				updatedComments[index] = { ...comment, label: 'Re-pending', contextValue: 'repending' };
+			}
+
+			tracked.thread.comments = updatedComments;
+			const hasActionable = updatedComments.some(isActionable);
+			tracked.thread.label = hasActionable ? 'Pending comments' : 'All comments processed';
+
+			if (hasActionable) {
+				const actionableTexts = getActionableTexts(updatedComments, tracked.commentTexts);
+				const updatedData = {
+					...tracked.data,
+					status: 'pending' as const,
+					content: actionableTexts.join('\n\n'),
+				};
+				CommentStore.saveComment(updatedData);
+				store.update(uuid, updatedData);
+			} else {
+				// No actionable comments — remove file from disk
+				store.deleteFile(uuid);
+				tracked.data = { ...tracked.data, status: 'processed' };
+			}
 		}),
 	);
 
