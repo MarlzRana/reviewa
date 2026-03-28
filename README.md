@@ -26,13 +26,11 @@ Leave inline code review comments on any file or git diff in VS Code, automatica
 
 Comments are injected into Claude's context in this format:
 
-```
 In `src/foo.ts` at line 42:
 ```
 +const x = 1
 ```
 Your comment here
-```
 
 Lines are prefixed with `+` for additions, `-` for removals, or no prefix for normal file/context lines.
 
