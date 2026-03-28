@@ -1,6 +1,6 @@
 # Reviewa
 
-Leave inline code review comments on any file or git diff in VS Code, automatically injected into Claude Code's or Codex CLI's context to be resolved.
+Leave inline code review comments on any file or git diff in VS Code, automatically injected into Claude Code or Codex CLI's context to be resolved.
 
 ## Features
 
@@ -13,7 +13,8 @@ Leave inline code review comments on any file or git diff in VS Code, automatica
 - **GitHub identity** — if signed into GitHub in VS Code, your username and avatar appear on comments
 - **Claude Code integration** — pending comments are automatically injected into Claude Code's context via a `UserPromptSubmit` hook when you submit your next prompt
 - **Codex CLI integration** — pending comments are also injected into OpenAI Codex CLI's context via a Python `UserPromptSubmit` hook
-- **Auto-cleanup** — comments are deleted from disk after they are processed; all pending comments are cleaned up when the workspace closes
+- **First-come consumption** — whichever CLI processes a comment first consumes it; comments are single-use and deleted from disk once consumed
+- **Auto-cleanup** — all pending comments are cleaned up when the workspace closes
 
 ## How it works
 
