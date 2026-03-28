@@ -235,6 +235,7 @@ export function createReviewaCommentController(
 				// Update file store with remaining texts
 				const updatedData = {
 					...tracked.data,
+					status: 'pending' as const,
 					content: tracked.commentTexts.join('\n\n'),
 				};
 				CommentStore.saveComment(updatedData);

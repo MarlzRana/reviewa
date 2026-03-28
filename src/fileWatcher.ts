@@ -38,7 +38,7 @@ export function createFileWatcher(
 				tracked.thread.state = vscode.CommentThreadState.Resolved;
 				tracked.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed;
 			}
-			store.delete(uuid);
+			tracked.data = { ...tracked.data, status: 'processed' };
 		});
 	} catch {
 		// Directory may not exist yet at watch time; it will be created on first comment

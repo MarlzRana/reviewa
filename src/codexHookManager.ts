@@ -1,8 +1,18 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { execSync } from 'child_process';
 import * as vscode from 'vscode';
 import { REVIEWA_DIR } from './types';
+
+export function hasCodex(): boolean {
+	try {
+		execSync('which codex', { stdio: 'ignore' });
+		return true;
+	} catch {
+		return false;
+	}
+}
 
 const HOOK_PY_CONTENT = `#!/usr/bin/env python3
 import json

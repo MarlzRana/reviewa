@@ -1,9 +1,19 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { execSync } from 'child_process';
 import { REVIEWA_DIR } from './types';
 
-const HOOK_JS_CONTENT = `#!/usr/bin/env node
+export function hasGeminiCli(): boolean {
+	try {
+		execSync('which gemini', { stdio: 'ignore' });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+const HOOK_GEMINI_JS_CONTENT = `#!/usr/bin/env node
 'use strict';
 
 const fs = require('fs');
@@ -72,7 +82,7 @@ async function main() {
 
 	const output = {
 		hookSpecificOutput: {
-			hookEventName: 'UserPromptSubmit',
+			hookEventName: 'BeforeAgent',
 			additionalContext,
 		},
 	};
@@ -82,20 +92,20 @@ async function main() {
 main().catch(() => process.exit(0));
 `;
 
-const HOOK_SH_CONTENT = `#!/bin/bash
-exec node "$HOME/.reviewa/v1/hook.js"
+const HOOK_GEMINI_SH_CONTENT = `#!/bin/bash
+exec node "$HOME/.reviewa/v1/hook_gemini.js"
 `;
 
-export function installClaudeHookScript(): void {
-	const hookJsPath = path.join(REVIEWA_DIR, 'hook.js');
-	fs.writeFileSync(hookJsPath, HOOK_JS_CONTENT, { mode: 0o755 });
+export function installGeminiCliHookScript(): void {
+	const hookJsPath = path.join(REVIEWA_DIR, 'hook_gemini.js');
+	fs.writeFileSync(hookJsPath, HOOK_GEMINI_JS_CONTENT, { mode: 0o755 });
 
-	const hookShPath = path.join(REVIEWA_DIR, 'hook.sh');
-	fs.writeFileSync(hookShPath, HOOK_SH_CONTENT, { mode: 0o755 });
+	const hookShPath = path.join(REVIEWA_DIR, 'hook_gemini.sh');
+	fs.writeFileSync(hookShPath, HOOK_GEMINI_SH_CONTENT, { mode: 0o755 });
 }
 
-export function registerClaudeHook(): void {
-	const settingsPath = path.join(os.homedir(), '.claude', 'settings.json');
+export function registerGeminiCliHook(): void {
+	const settingsPath = path.join(os.homedir(), '.gemini', 'settings.json');
 	const settingsDir = path.dirname(settingsPath);
 
 	fs.mkdirSync(settingsDir, { recursive: true });
@@ -113,12 +123,12 @@ export function registerClaudeHook(): void {
 
 	const hooks = settings.hooks as Record<string, unknown[]>;
 
-	if (!Array.isArray(hooks.UserPromptSubmit)) {
-		hooks.UserPromptSubmit = [];
+	if (!Array.isArray(hooks.BeforeAgent)) {
+		hooks.BeforeAgent = [];
 	}
 
 	// Check if reviewa hook is already registered
-	const alreadyRegistered = hooks.UserPromptSubmit.some((entry: unknown) => {
+	const alreadyRegistered = hooks.BeforeAgent.some((entry: unknown) => {
 		if (typeof entry !== 'object' || entry === null) {
 			return false;
 		}
@@ -139,12 +149,12 @@ export function registerClaudeHook(): void {
 		return;
 	}
 
-	hooks.UserPromptSubmit.push({
+	hooks.BeforeAgent.push({
 		hooks: [
 			{
 				type: 'command',
-				command: `bash ${path.join(os.homedir(), '.reviewa', 'v1', 'hook.sh')}`,
-				timeout: 10,
+				command: `bash ${path.join(os.homedir(), '.reviewa', 'v1', 'hook_gemini.sh')}`,
+				timeout: 10000,
 			},
 		],
 	});

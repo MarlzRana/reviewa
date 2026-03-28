@@ -1,6 +1,6 @@
 # Reviewa
 
-VS Code extension that lets developers leave inline code review comments on any file or git diff, which are automatically injected into Claude Code's or Codex CLI's context to be resolved.
+VS Code extension that lets developers leave inline code review comments on any file or git diff, which are automatically injected into Claude Code's, Codex's, or Gemini CLI's context to be resolved.
 
 ## Architecture
 
@@ -23,11 +23,13 @@ VS Code extension that lets developers leave inline code review comments on any 
 
 ### Hook Integration
 - Hook management is split across three files coordinated by `src/hookManager.ts`
-- **Claude Code hook** (`src/claudeHookManager.ts`): `~/.reviewa/v1/hook.js` (Node.js) + `hook.sh` wrapper, registered in `~/.claude/settings.json`
-- **Codex CLI hook** (`src/codexHookManager.ts`): `~/.reviewa/v1/hook.py` (Python stdlib only), registered in `~/.codex/hooks.json`
+- **Claude Code hook** (`src/claudeCodeHookManager.ts`): `~/.reviewa/v1/hook.js` (Node.js) + `hook.sh` wrapper, registered in `~/.claude/settings.json`
+- **Codex hook** (`src/codexHookManager.ts`): `~/.reviewa/v1/hook.py` (Python stdlib only), registered in `~/.codex/hooks.json`
   - Ensures `codex_hooks = true` in `~/.codex/config.toml` `[features]` section
   - Shows a VS Code warning if `codex_hooks` is explicitly set to `false`
-- Both hooks use the same `UserPromptSubmit` event: filter comments by `cwd`, inject as `additionalContext`, then delete consumed JSON files
+- **Gemini CLI hook** (`src/geminiCliHookManager.ts`): `~/.reviewa/v1/hook_gemini.js` (Node.js) + `hook_gemini.sh` wrapper, registered in `~/.gemini/settings.json`
+  - Uses `BeforeAgent` hook event (not `UserPromptSubmit`) — Gemini's equivalent that fires before agent planning
+- Claude and Codex hooks use `UserPromptSubmit`; Gemini uses `BeforeAgent` — all filter comments by `cwd`, inject as `additionalContext`, then delete consumed JSON files
 - Comments are single-use — whichever CLI processes a comment first consumes and deletes it from disk
 - Hook scripts are embedded as string constants and written to disk on activation
 - Context format per comment:
@@ -54,8 +56,9 @@ npm run watch      # dev mode with file watching
 ## Key Files
 - `src/commentController.ts` — Comment Controller setup, submit handler, diff side detection, GitHub author resolution
 - `src/hookManager.ts` — coordinates hook script installation and registration across all supported agents
-- `src/claudeHookManager.ts` — Claude Code hook script (Node.js) + `~/.claude/settings.json` registration
-- `src/codexHookManager.ts` — Codex CLI hook script (Python) + `~/.codex/hooks.json` registration + config.toml feature flag
+- `src/claudeCodeHookManager.ts` — Claude Code hook script (Node.js) + `~/.claude/settings.json` registration
+- `src/codexHookManager.ts` — Codex hook script (Python) + `~/.codex/hooks.json` registration + config.toml feature flag
+- `src/geminiCliHookManager.ts` — Gemini CLI hook script (Node.js) + `~/.gemini/settings.json` registration
 - `src/gitUtils.ts` — git URI parsing + repo root resolution via `vscode.git` extension API
 - `src/fileWatcher.ts` — watches comment dir for deletions to update thread state + comment labels
 - `src/commentStore.ts` — in-memory store + JSON file persistence, cleanup on deactivation
@@ -64,7 +67,8 @@ npm run watch      # dev mode with file watching
 ## Resources
 - VS Code Extension API docs: !`echo $HOME`/gh/microsoft/vscode-docs
 - Claude Code Hooks documentation: !`echo $HOME`/gh/ericbuess/claude-code-docs
-- Codex CLI Hooks documentation: `misc/codex/`
+- Codex Hooks documentation: `misc/codex/`
+- Gemini CLI documentation: !`echo $HOME`/gh/google-gemini/gemini-cli
 - GitHub Pull Request extension (reference for Comment Controller patterns and git URI resolution): !`echo $HOME`/gh/Microsoft/vscode-pull-request-github
 
 ## Testing

@@ -2,11 +2,17 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.4] - 2026-03-28
+
+### Added
+
+- Gemini CLI hook support — review comments are now injected into Google Gemini CLI via a `BeforeAgent` hook registered in `~/.gemini/settings.json`
+
 ## [0.0.3] - 2026-03-28
 
 ### Added
 
-- Codex CLI hook support — review comments are now injected into OpenAI Codex via a Python `UserPromptSubmit` hook
+- Codex hook support — review comments are now injected into OpenAI Codex via a Python `UserPromptSubmit` hook
 - Automatic `codex_hooks = true` feature flag in `~/.codex/config.toml`
 - Warning notification if `codex_hooks` is explicitly disabled
 
