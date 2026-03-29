@@ -42,6 +42,10 @@ Run `npx @vscode/vsce package` to produce the `.vsix` file. Verify it succeeds.
 
 Run `gh release create v<version> reviewa-<version>.vsix --title "v<version>" --notes "<changelog notes>"` to publish the release with the VSIX attached.
 
-## 9. Remind the user
+## 9. Fetch the release tag
+
+Run `git fetch --tags origin` to pull the tag created by the GitHub release into the local repository.
+
+## 10. Remind the user
 
 Tell the user the GitHub release URL and remind them to upload `reviewa-<version>.vsix` to the VS Code Marketplace manually.
