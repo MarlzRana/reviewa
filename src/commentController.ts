@@ -320,9 +320,9 @@ export function createReviewaCommentController(
 		}),
 	);
 
-	// Toggle re-pending state
+	// Mark processed → re-pending
 	context.subscriptions.push(
-		vscode.commands.registerCommand('reviewa.toggleRepending', (comment: vscode.Comment) => {
+		vscode.commands.registerCommand('reviewa.markRepending', (comment: vscode.Comment) => {
 			const entry = store.findByComment(comment);
 			if (!entry) {
 				return;
@@ -330,15 +330,34 @@ export function createReviewaCommentController(
 
 			const [uuid, tracked, index] = entry;
 			const updatedComments = [...tracked.thread.comments];
-			const isRepending = comment.contextValue === 'repending';
+			updatedComments[index] = { ...comment, label: 'Re-pending', contextValue: 'repending' };
 
-			if (isRepending) {
-				// Re-pending → Processed
-				updatedComments[index] = { ...comment, label: 'Processed', contextValue: 'processed' };
-			} else {
-				// Processed → Re-pending
-				updatedComments[index] = { ...comment, label: 'Re-pending', contextValue: 'repending' };
+			tracked.thread.comments = updatedComments;
+			tracked.thread.label = 'Pending comments';
+
+			const actionableTexts = getActionableTexts(updatedComments, tracked.commentTexts);
+			const updatedData = {
+				...tracked.data,
+				status: 'pending' as const,
+				created_at: new Date().toISOString(),
+				content: actionableTexts.join('\n\n'),
+			};
+			CommentStore.saveComment(updatedData);
+			store.update(uuid, updatedData);
+		}),
+	);
+
+	// Mark re-pending → processed
+	context.subscriptions.push(
+		vscode.commands.registerCommand('reviewa.markProcessed', (comment: vscode.Comment) => {
+			const entry = store.findByComment(comment);
+			if (!entry) {
+				return;
 			}
+
+			const [uuid, tracked, index] = entry;
+			const updatedComments = [...tracked.thread.comments];
+			updatedComments[index] = { ...comment, label: 'Processed', contextValue: 'processed' };
 
 			tracked.thread.comments = updatedComments;
 			const hasActionable = updatedComments.some(isActionable);
@@ -355,7 +374,6 @@ export function createReviewaCommentController(
 				CommentStore.saveComment(updatedData);
 				store.update(uuid, updatedData);
 			} else {
-				// No actionable comments — remove file from disk
 				store.deleteFile(uuid);
 				tracked.data = { ...tracked.data, status: 'processed' };
 			}

@@ -60,9 +60,14 @@
         "icon": "$(check)"
       },
       {
-        "command": "reviewa.toggleRepending",
-        "title": "Toggle Re-pending",
+        "command": "reviewa.markRepending",
+        "title": "Re-pend",
         "icon": "$(history)"
+      },
+      {
+        "command": "reviewa.markProcessed",
+        "title": "Mark as Processed",
+        "icon": "$(check)"
       }
     ],
     "menus": {
@@ -88,7 +93,11 @@
           "when": "false"
         },
         {
-          "command": "reviewa.toggleRepending",
+          "command": "reviewa.markRepending",
+          "when": "false"
+        },
+        {
+          "command": "reviewa.markProcessed",
           "when": "false"
         }
       ],
@@ -115,9 +124,14 @@
       ],
       "comments/comment/title": [
         {
-          "command": "reviewa.toggleRepending",
+          "command": "reviewa.markRepending",
           "group": "inline",
-          "when": "commentController == reviewa && comment =~ /^(processed|repending)$/"
+          "when": "commentController == reviewa && comment == processed"
+        },
+        {
+          "command": "reviewa.markProcessed",
+          "group": "inline",
+          "when": "commentController == reviewa && comment == repending"
         },
         {
           "command": "reviewa.editComment",
