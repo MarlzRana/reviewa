@@ -48,6 +48,10 @@ export class CommentStore {
 		this._onDidChangePendingCount.fire();
 	}
 
+	getAll(): TrackedComment[] {
+		return Array.from(this.store.values());
+	}
+
 	get(uuid: string): TrackedComment | undefined {
 		return this.store.get(uuid);
 	}
