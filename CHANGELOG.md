@@ -2,6 +2,19 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.6] - 2026-03-29
+
+### Added
+
+- Rounded rectangle avatar — GitHub profile pictures are now rendered with rounded corners
+- `autoCollapseOnCodingAgentConsumption` setting — opt-in to auto-collapse threads when a coding agent consumes them (default: `false`)
+- Comments are now sorted by creation time before being injected into coding agent context
+- `created_at` timestamp updates on follow-up reply, edit, and re-pend actions
+
+### Fixed
+
+- Tooltip text showing wrong action when toggling between re-pending and processed states
+
 ## [0.0.5] - 2026-03-28
 
 ### Added

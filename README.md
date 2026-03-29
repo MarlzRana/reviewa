@@ -10,11 +10,12 @@ Leave inline code review comments on any file or git diff in VS Code, automatica
 - **Multi-comment threads** — reply to existing threads with additional comments
 - **Edit and delete** — edit pending comments in-place, delete individual comments or entire threads
 - **Status tracking** — each comment shows a Pending/Processed label; threads show "Pending comments" or "All comments processed"
-- **GitHub identity** — if signed into GitHub in VS Code, your username and avatar appear on comments
+- **GitHub identity** — if signed into GitHub in VS Code, your username and rounded avatar appear on comments
 - **Claude Code integration** — pending comments are automatically injected into Claude Code's context via a `UserPromptSubmit` hook when you submit your next prompt
 - **Codex integration** — pending comments are also injected into OpenAI Codex's context via a Python `UserPromptSubmit` hook
 - **Gemini CLI integration** — pending comments are injected into Google Gemini CLI's context via a `BeforeAgent` hook
 - **First-come consumption** — whichever CLI processes a comment first consumes it; comments are single-use and deleted from disk once consumed
+- **Auto-collapse** — optionally auto-collapse threads when a coding agent consumes them (`reviewa.autoCollapseOnCodingAgentConsumption`)
 - **Auto-cleanup** — all pending comments are cleaned up when the workspace closes
 
 ## How it works
