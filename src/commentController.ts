@@ -2,18 +2,50 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
+import * as https from 'https';
 import { ReviewaComment, CommentSide } from './types';
 import { parseGitUri, getGitRepoRoot } from './gitUtils';
 import { CommentStore } from './commentStore';
+
+function fetchBuffer(url: string): Promise<Buffer> {
+	return new Promise((resolve, reject) => {
+		https.get(url, (res) => {
+			if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+				fetchBuffer(res.headers.location).then(resolve, reject);
+				return;
+			}
+			const chunks: Buffer[] = [];
+			res.on('data', (chunk: Buffer) => chunks.push(chunk));
+			res.on('end', () => resolve(Buffer.concat(chunks)));
+			res.on('error', reject);
+		}).on('error', reject);
+	});
+}
+
+function buildRoundedRectAvatarUri(imageBase64: string, size: number): vscode.Uri {
+	const radius = Math.round(size * 0.2);
+	const svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<defs><clipPath id="r"><rect width="${size}" height="${size}" rx="${radius}" ry="${radius}"/></clipPath></defs>
+	<image href="data:image/png;base64,${imageBase64}" width="${size}" height="${size}" clip-path="url(#r)"/>
+</svg>`;
+	return vscode.Uri.parse(`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`);
+}
 
 async function getGitHubAuthor(): Promise<vscode.CommentAuthorInformation> {
 	try {
 		const session = await vscode.authentication.getSession('github', ['read:user'], { createIfNone: false });
 		if (session) {
-			return {
-				name: session.account.label,
-				iconPath: vscode.Uri.parse(`https://avatars.githubusercontent.com/u/${session.account.id}`),
-			};
+			const avatarUrl = `https://avatars.githubusercontent.com/u/${session.account.id}?s=40`;
+			try {
+				const imageData = await fetchBuffer(avatarUrl);
+				const iconPath = buildRoundedRectAvatarUri(imageData.toString('base64'), 40);
+				return { name: session.account.label, iconPath };
+			} catch {
+				return {
+					name: session.account.label,
+					iconPath: vscode.Uri.parse(`https://avatars.githubusercontent.com/u/${session.account.id}`),
+				};
+			}
 		}
 	} catch {
 		// Not logged in or permission denied
