@@ -192,7 +192,7 @@ export function createReviewaCommentController(
 
 			const author = await authorPromise;
 			const newVscodeComment: vscode.Comment = {
-				body: reply.text,
+				body: new vscode.MarkdownString(reply.text),
 				mode: vscode.CommentMode.Preview,
 				author,
 				label: 'Pending',
@@ -308,7 +308,11 @@ export function createReviewaCommentController(
 
 			const [, tracked, index] = entry;
 			const updatedComments = [...tracked.thread.comments];
-			updatedComments[index] = { ...comment, mode: vscode.CommentMode.Editing };
+			updatedComments[index] = {
+				...comment,
+				body: typeof comment.body === 'string' ? comment.body : comment.body.value,
+				mode: vscode.CommentMode.Editing,
+			};
 			tracked.thread.comments = updatedComments;
 		}),
 	);
@@ -330,8 +334,8 @@ export function createReviewaCommentController(
 			// If saving a processed comment, auto-set to re-pending
 			const wasProcessed = comment.contextValue === 'processed';
 			const updatedComment = wasProcessed
-				? { ...comment, mode: vscode.CommentMode.Preview, label: 'Re-pending', contextValue: 'repending' }
-				: { ...comment, mode: vscode.CommentMode.Preview };
+				? { ...comment, body: new vscode.MarkdownString(newText), mode: vscode.CommentMode.Preview, label: 'Re-pending', contextValue: 'repending' }
+				: { ...comment, body: new vscode.MarkdownString(newText), mode: vscode.CommentMode.Preview };
 
 			// Update UI
 			const updatedComments = [...tracked.thread.comments];
