@@ -61,7 +61,8 @@ npm run watch      # dev mode with file watching
 - `src/geminiCliHookManager.ts` — Gemini CLI hook script (Node.js) + `~/.gemini/settings.json` registration
 - `src/gitUtils.ts` — git URI parsing + repo root resolution via `vscode.git` extension API
 - `src/fileWatcher.ts` — watches comment dir for deletions to update thread state + comment labels
-- `src/commentStore.ts` — in-memory store + JSON file persistence, cleanup on deactivation
+- `src/statusBar.ts` — status bar item showing pending comment count with custom glasses icon
+- `src/commentStore.ts` — in-memory store + JSON file persistence, cleanup on deactivation, pending/processed count + change event
 - `src/types.ts` — `ReviewaComment` interface, `CommentSide` type, directory constants
 
 ## Resources

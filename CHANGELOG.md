@@ -2,6 +2,19 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.7] - 2026-03-29
+
+### Added
+
+- Markdown rendering in comment bodies — comment text is now rendered as markdown in preview mode
+- Status bar item — shows pending comment thread count with custom glasses icon, click to open Comments panel
+- Custom `reviewa-glasses` icon font for status bar branding
+- Gutter icon color differentiation — pending comments show as unresolved (theme-colored), processed as resolved (dimmed)
+
+### Fixed
+
+- Gutter icon not reflecting comment state — new threads now explicitly set `Unresolved` state
+
 ## [0.0.6] - 2026-03-29
 
 ### Added
