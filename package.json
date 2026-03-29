@@ -145,6 +145,15 @@
         }
       ]
     },
+    "icons": {
+      "reviewa-glasses": {
+        "description": "Reviewa glasses icon",
+        "default": {
+          "fontPath": "images/reviewa-icons.woff",
+          "fontCharacter": "\\F101"
+        }
+      }
+    },
     "configuration": {
       "title": "Reviewa",
       "properties": {

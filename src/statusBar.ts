@@ -16,12 +16,12 @@ export function createStatusBarItem(
 
 		if (pending > 0) {
 			hasEverHadComment = true;
-			item.text = `$(comment-discussion) ${pending}`;
+			item.text = `$(reviewa-glasses) ${pending}`;
 			item.tooltip = `${pending} pending comment thread${pending === 1 ? '' : 's'}`;
 			item.show();
 		} else if (hasEverHadComment) {
 			const processed = store.getProcessedCount();
-			item.text = `$(comment-discussion)`;
+			item.text = `$(reviewa-glasses)`;
 			item.tooltip = processed > 0 ? `${processed} processed comment thread${processed === 1 ? '' : 's'}` : '';
 			item.show();
 		} else {
