@@ -43,6 +43,7 @@ export function createFileWatcher(
 				tracked.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed;
 			}
 			tracked.data = { ...tracked.data, status: 'processed' };
+			store.notifyPendingCountChanged();
 		});
 	} catch {
 		// Directory may not exist yet at watch time; it will be created on first comment

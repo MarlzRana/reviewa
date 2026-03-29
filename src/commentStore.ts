@@ -11,6 +11,18 @@ export interface TrackedComment {
 export class CommentStore {
 	private readonly store = new Map<string, TrackedComment>();
 	private readonly suppressedDeletions = new Set<string>();
+	private readonly _onDidChangePendingCount = new vscode.EventEmitter<void>();
+	readonly onDidChangePendingCount = this._onDidChangePendingCount.event;
+
+	getPendingCount(): number {
+		let count = 0;
+		for (const tracked of this.store.values()) {
+			if (tracked.data.status === 'pending') {
+				count++;
+			}
+		}
+		return count;
+	}
 
 	static ensureDirectoryExists(): void {
 		fs.mkdirSync(COMMENTS_DIR, { recursive: true });
@@ -23,6 +35,7 @@ export class CommentStore {
 
 	add(uuid: string, data: ReviewaComment, thread: vscode.CommentThread, commentTexts: string[]): void {
 		this.store.set(uuid, { data, thread, commentTexts });
+		this._onDidChangePendingCount.fire();
 	}
 
 	get(uuid: string): TrackedComment | undefined {
@@ -33,6 +46,7 @@ export class CommentStore {
 		const tracked = this.store.get(uuid);
 		if (tracked) {
 			tracked.data = data;
+			this._onDidChangePendingCount.fire();
 		}
 	}
 
@@ -45,8 +59,13 @@ export class CommentStore {
 		return undefined;
 	}
 
+	notifyPendingCountChanged(): void {
+		this._onDidChangePendingCount.fire();
+	}
+
 	delete(uuid: string): void {
 		this.store.delete(uuid);
+		this._onDidChangePendingCount.fire();
 	}
 
 	findByComment(comment: vscode.Comment): [string, TrackedComment, number] | undefined {

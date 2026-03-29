@@ -293,6 +293,7 @@ export function createReviewaCommentController(
 					// Only processed comments remain — remove file from disk
 					store.deleteFile(uuid);
 					tracked.data = { ...tracked.data, status: 'processed' };
+					store.notifyPendingCountChanged();
 				}
 			}
 		}),
@@ -412,6 +413,7 @@ export function createReviewaCommentController(
 			} else {
 				store.deleteFile(uuid);
 				tracked.data = { ...tracked.data, status: 'processed' };
+					store.notifyPendingCountChanged();
 			}
 		}),
 	);
