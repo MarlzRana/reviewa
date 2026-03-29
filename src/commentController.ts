@@ -181,6 +181,7 @@ export function createReviewaCommentController(
 					const updatedData = {
 						...tracked.data,
 						status: 'pending' as const,
+						created_at: new Date().toISOString(),
 						content: actionableTexts.join('\n\n'),
 					};
 					CommentStore.saveComment(updatedData);
@@ -311,6 +312,7 @@ export function createReviewaCommentController(
 			const updatedData = {
 				...tracked.data,
 				status: 'pending' as const,
+				created_at: new Date().toISOString(),
 				content: actionableTexts.join('\n\n'),
 			};
 			CommentStore.saveComment(updatedData);
@@ -347,6 +349,7 @@ export function createReviewaCommentController(
 				const updatedData = {
 					...tracked.data,
 					status: 'pending' as const,
+					created_at: new Date().toISOString(),
 					content: actionableTexts.join('\n\n'),
 				};
 				CommentStore.saveComment(updatedData);
