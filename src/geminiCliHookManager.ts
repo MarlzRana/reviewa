@@ -65,6 +65,8 @@ async function main() {
 		process.exit(0);
 	}
 
+	matchedComments.sort((a, b) => (a.comment.created_at || '').localeCompare(b.comment.created_at || ''));
+
 	const parts = [];
 	for (const { comment } of matchedComments) {
 		const relPath = path.relative(cwd, comment.abs_path);

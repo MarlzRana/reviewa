@@ -60,6 +60,8 @@ def main():
     if not matched:
         sys.exit(0)
 
+    matched.sort(key=lambda x: x[0].get("created_at", ""))
+
     parts = []
     for comment, _ in matched:
         rel_path = os.path.relpath(comment["abs_path"], cwd)
