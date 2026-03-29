@@ -9,11 +9,20 @@ export function createStatusBarItem(
 	item.command = 'workbench.action.focusCommentsPanel';
 	context.subscriptions.push(item);
 
+	let hasEverHadComment = false;
+
 	function update() {
-		const count = store.getPendingCount();
-		if (count > 0) {
-			item.text = `$(comment-discussion) ${count}`;
-			item.tooltip = `${count} pending comment thread${count === 1 ? '' : 's'}`;
+		const pending = store.getPendingCount();
+
+		if (pending > 0) {
+			hasEverHadComment = true;
+			item.text = `$(comment-discussion) ${pending}`;
+			item.tooltip = `${pending} pending comment thread${pending === 1 ? '' : 's'}`;
+			item.show();
+		} else if (hasEverHadComment) {
+			const processed = store.getProcessedCount();
+			item.text = `$(comment-discussion)`;
+			item.tooltip = processed > 0 ? `${processed} processed comment thread${processed === 1 ? '' : 's'}` : '';
 			item.show();
 		} else {
 			item.hide();

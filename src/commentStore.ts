@@ -24,6 +24,16 @@ export class CommentStore {
 		return count;
 	}
 
+	getProcessedCount(): number {
+		let count = 0;
+		for (const tracked of this.store.values()) {
+			if (tracked.data.status === 'processed') {
+				count++;
+			}
+		}
+		return count;
+	}
+
 	static ensureDirectoryExists(): void {
 		fs.mkdirSync(COMMENTS_DIR, { recursive: true });
 	}
