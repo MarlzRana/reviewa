@@ -14,7 +14,8 @@
   },
   "icon": "images/icon.png",
   "categories": [
-    "AI"
+    "AI",
+    "Chat"
   ],
   "keywords": [
     "code review",
