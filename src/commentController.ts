@@ -201,6 +201,7 @@ export function createReviewaCommentController(
 
 			reply.thread.comments = [...reply.thread.comments, newVscodeComment];
 			reply.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Expanded;
+			reply.thread.state = vscode.CommentThreadState.Unresolved;
 			reply.thread.label = 'Pending comments';
 
 			const existingUuid = reply.thread.contextValue;
@@ -343,6 +344,7 @@ export function createReviewaCommentController(
 			updatedComments[index] = updatedComment;
 			tracked.thread.comments = updatedComments;
 			tracked.thread.label = 'Pending comments';
+			tracked.thread.state = vscode.CommentThreadState.Unresolved;
 
 			// Update file store with actionable texts only
 			const actionableTexts = getActionableTexts(updatedComments, tracked.commentTexts);
@@ -371,6 +373,7 @@ export function createReviewaCommentController(
 
 			tracked.thread.comments = updatedComments;
 			tracked.thread.label = 'Pending comments';
+			tracked.thread.state = vscode.CommentThreadState.Unresolved;
 
 			const actionableTexts = getActionableTexts(updatedComments, tracked.commentTexts);
 			const updatedData = {

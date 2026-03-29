@@ -37,10 +37,12 @@ export function createFileWatcher(
 			}));
 			const hasPending = tracked.thread.comments.some(c => c.label === 'Pending');
 			tracked.thread.label = hasPending ? 'Pending comments' : 'All comments processed';
-			const autoCollapse = vscode.workspace.getConfiguration('reviewa').get<boolean>('autoCollapseOnCodingAgentConsumption', false);
-			if (!hasPending && autoCollapse) {
+			if (!hasPending) {
 				tracked.thread.state = vscode.CommentThreadState.Resolved;
-				tracked.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed;
+				const autoCollapse = vscode.workspace.getConfiguration('reviewa').get<boolean>('autoCollapseOnCodingAgentConsumption', false);
+				if (autoCollapse) {
+					tracked.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed;
+				}
 			}
 			tracked.data = { ...tracked.data, status: 'processed' };
 			store.notifyPendingCountChanged();
