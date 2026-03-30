@@ -74,7 +74,7 @@ describe('createPlanWatcher', () => {
 		});
 
 		it('creates watcher and registers hooks when config enabled', () => {
-			__setConfigValues({ 'reviewa.planSupport': { enabled: true } });
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			createPlanWatcher(context);
 
 			expect(registerPlanHook).toHaveBeenCalledTimes(1);
@@ -98,7 +98,7 @@ describe('createPlanWatcher', () => {
 			expect(registerPlanHook).not.toHaveBeenCalled();
 
 			// Now change config to enabled
-			__setConfigValues({ 'reviewa.planSupport': { enabled: true } });
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			configChangeListener({ affectsConfiguration: (s: string) => s === 'reviewa.planSupport' });
 
 			expect(registerPlanHook).toHaveBeenCalledTimes(1);
@@ -106,7 +106,7 @@ describe('createPlanWatcher', () => {
 		});
 
 		it('deactivates when config changes to disabled', () => {
-			__setConfigValues({ 'reviewa.planSupport': { enabled: true } });
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			let configChangeListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
 			vi.mocked(vscode.workspace.onDidChangeConfiguration).mockImplementation((listener: unknown) => {
 				configChangeListener = listener as typeof configChangeListener;
@@ -117,7 +117,7 @@ describe('createPlanWatcher', () => {
 			const watcherClose = vi.mocked(fs.watch).mock.results[0].value.close;
 
 			// Disable
-			__setConfigValues({ 'reviewa.planSupport': { enabled: false } });
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: false } });
 			configChangeListener({ affectsConfiguration: (s: string) => s === 'reviewa.planSupport' });
 
 			expect(watcherClose).toHaveBeenCalled();
@@ -141,7 +141,7 @@ describe('createPlanWatcher', () => {
 
 	describe('file events', () => {
 		it('opens relevant .md plan files', () => {
-			__setConfigValues({ 'reviewa.planSupport': { enabled: true } });
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			vi.mocked(fs.readFileSync).mockReturnValue(
 				JSON.stringify({ cwd: '/test/workspace', created_at: '2026-01-01' })
 			);
@@ -156,7 +156,7 @@ describe('createPlanWatcher', () => {
 		});
 
 		it('ignores non-.md files', () => {
-			__setConfigValues({ 'reviewa.planSupport': { enabled: true } });
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			createPlanWatcher(context);
 			const callback = getWatchCallback();
 
@@ -168,7 +168,7 @@ describe('createPlanWatcher', () => {
 		});
 
 		it('does not open plan when not relevant to workspace', () => {
-			__setConfigValues({ 'reviewa.planSupport': { enabled: true } });
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			vi.mocked(fs.readFileSync).mockReturnValue(
 				JSON.stringify({ cwd: '/other/project', created_at: '2026-01-01' })
 			);
@@ -184,7 +184,7 @@ describe('createPlanWatcher', () => {
 
 	describe('isRelevantPlan (via file event)', () => {
 		function setupAndTrigger(metadata: object | null) {
-			__setConfigValues({ 'reviewa.planSupport': { enabled: true } });
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			if (metadata) {
 				vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(metadata));
 			} else {
@@ -244,7 +244,7 @@ describe('createPlanWatcher', () => {
 
 	describe('dispose', () => {
 		it('deactivates and unregisters plan hook on dispose', () => {
-			__setConfigValues({ 'reviewa.planSupport': { enabled: true } });
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			let configChangeListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
 			vi.mocked(vscode.workspace.onDidChangeConfiguration).mockImplementation((listener: unknown) => {
 				configChangeListener = listener as typeof configChangeListener;

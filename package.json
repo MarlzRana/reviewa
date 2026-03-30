@@ -224,11 +224,11 @@
         "reviewa.planSupport": {
           "type": "object",
           "default": {
-            "enabled": false
+            "claudeCode": false
           },
-          "description": "Automatically open Claude Code plan files when they are created or modified in the current workspace.",
+          "description": "Enable plan file watching and inline commenting for supported coding CLIs.",
           "properties": {
-            "enabled": {
+            "claudeCode": {
               "type": "boolean",
               "default": false,
               "description": "Watch for Claude Code plan files and allow inline comments"

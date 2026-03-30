@@ -5,7 +5,7 @@ import { CLAUDE_PLANS_DIR, PLAN_METADATA_DIR } from './types';
 import { registerPlanHook, unregisterPlanHook } from './hookManager';
 
 interface PlanSupportConfig {
-	enabled: boolean;
+	claudeCode: boolean;
 }
 
 interface PlanMetadata {
@@ -91,7 +91,7 @@ export function createPlanWatcher(context: vscode.ExtensionContext): void {
 	}
 
 	const config = vscode.workspace.getConfiguration('reviewa').get<PlanSupportConfig>('planSupport');
-	if (config?.enabled) {
+	if (config?.claudeCode) {
 		activate();
 	}
 
@@ -99,7 +99,7 @@ export function createPlanWatcher(context: vscode.ExtensionContext): void {
 		vscode.workspace.onDidChangeConfiguration(e => {
 			if (e.affectsConfiguration('reviewa.planSupport')) {
 				const newConfig = vscode.workspace.getConfiguration('reviewa').get<PlanSupportConfig>('planSupport');
-				if (newConfig?.enabled) {
+				if (newConfig?.claudeCode) {
 					activate();
 				} else {
 					deactivate();

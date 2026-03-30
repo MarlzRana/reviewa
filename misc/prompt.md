@@ -62,3 +62,16 @@ One hook registered in `~/.claude/settings.json` on extension activation:
 - Submit a prompt in Claude Code from the same workspace → comments appear in context, JSON files are deleted, in-memory status flips to `processed`, threads collapse and display as resolved in the diff viewer
 - Stale comments (line has changed) are deleted silently and do not appear in context
 - Comments from other workspaces are not injected when Claude Code is run from a different directory
+
+
+
+2.
+## Mission
+I want to now implement support for Gemini plans, in the same we do for Claude plans. Gemini users should be able to see auto see their
+
+
+
+  Here is the rough schematic of how it should work (you will have to do extra steps, I am just capture the code idea):
+  - Register a BeforeTool hook at looks for writes that are match the ~/gemini/tmp/<some-project-dir-can-be-anything>/<session-id-can-be-anything>/plans/<plan-name>.md (use a glob or equivalent) and writes the
+  plan metadata to
+  - There will be a fileWatcher looking at ~/
