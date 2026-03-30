@@ -152,12 +152,12 @@
         {
           "command": "reviewa.copyPlanComments",
           "group": "navigation",
-          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/"
+          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/ || resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/"
         },
         {
           "command": "reviewa.copyAllPendingComments",
           "group": "navigation",
-          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/"
+          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/ || resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/"
         }
       ],
       "comments/commentThread/context": [
@@ -224,14 +224,20 @@
         "reviewa.planSupport": {
           "type": "object",
           "default": {
-            "claudeCode": false
+            "claudeCode": true,
+            "geminiCli": true
           },
           "description": "Enable plan file watching and inline commenting for supported coding CLIs.",
           "properties": {
             "claudeCode": {
               "type": "boolean",
-              "default": false,
+              "default": true,
               "description": "Watch for Claude Code plan files and allow inline comments"
+            },
+            "geminiCli": {
+              "type": "boolean",
+              "default": true,
+              "description": "Watch for Gemini CLI plan files and allow inline comments"
             }
           }
         }
