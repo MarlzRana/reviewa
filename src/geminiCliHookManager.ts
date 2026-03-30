@@ -59,7 +59,8 @@ async function main() {
 			continue;
 		}
 
-		if (!comment.abs_path || !comment.abs_path.startsWith(cwd)) {
+		const matchPath = comment.logical_abs_path || comment.abs_path;
+		if (!matchPath || !matchPath.startsWith(cwd)) {
 			continue;
 		}
 
@@ -74,9 +75,9 @@ async function main() {
 
 	const parts = [];
 	for (const { comment } of matchedComments) {
-		const relPath = path.relative(cwd, comment.abs_path);
+		const displayPath = comment.abs_path.startsWith(cwd) ? path.relative(cwd, comment.abs_path) : comment.abs_path;
 		const formatted = formatLineContent(comment);
-		parts.push('In \\\`' + relPath + '\\\` at line ' + comment.line_number + ':\\n\\\`\\\`\\\`\\n' + formatted + '\\n\\\`\\\`\\\`\\n' + comment.content);
+		parts.push('In \\\`' + displayPath + '\\\` at line ' + comment.line_number + ':\\n\\\`\\\`\\\`\\n' + formatted + '\\n\\\`\\\`\\\`\\n' + comment.content);
 	}
 
 	const contextText = parts.join('\\n\\n');
