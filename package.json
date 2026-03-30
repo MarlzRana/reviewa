@@ -91,6 +91,16 @@
         "command": "reviewa.markProcessed",
         "title": "Mark as Processed",
         "icon": "$(check)"
+      },
+      {
+        "command": "reviewa.copyPlanComments",
+        "title": "Copy Plan Comments to Clipboard",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "reviewa.copyAllPendingComments",
+        "title": "Copy All Pending Comments to Clipboard",
+        "icon": "$(files)"
       }
     ],
     "menus": {
@@ -122,6 +132,26 @@
         {
           "command": "reviewa.markProcessed",
           "when": "false"
+        },
+        {
+          "command": "reviewa.copyPlanComments",
+          "when": "false"
+        },
+        {
+          "command": "reviewa.copyAllPendingComments",
+          "when": "false"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "reviewa.copyPlanComments",
+          "group": "navigation",
+          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/"
+        },
+        {
+          "command": "reviewa.copyAllPendingComments",
+          "group": "navigation",
+          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/"
         }
       ],
       "comments/commentThread/context": [
