@@ -34,18 +34,22 @@ If any user-facing features, requirements, or workflows changed, update the READ
 
 If any architecture, key files, hook integration, or build details changed, update CLAUDE.md to reflect them. If nothing structural changed, skip this step.
 
-## 7. Build the VSIX package
+## 7. Run unit tests
+
+Run `npm run test:unit` and verify all tests pass. Do NOT proceed with the release if any test fails — fix the failures first.
+
+## 8. Build the VSIX package
 
 Run `npx @vscode/vsce package` to produce the `.vsix` file. Verify it succeeds.
 
-## 8. Create GitHub release
+## 9. Create GitHub release
 
 Run `gh release create v<version> reviewa-<version>.vsix --title "v<version>" --notes "<changelog notes>"` to publish the release with the VSIX attached.
 
-## 9. Fetch the release tag
+## 10. Fetch the release tag
 
 Run `git fetch --tags origin` to pull the tag created by the GitHub release into the local repository.
 
-## 10. Remind the user
+## 11. Remind the user
 
 Tell the user the GitHub release URL and remind them to upload `reviewa-<version>.vsix` to the VS Code Marketplace manually.
