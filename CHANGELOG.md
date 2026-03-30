@@ -2,6 +2,24 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.8] - 2026-03-30
+
+### Added
+
+- Comment tree view — new activity bar panel showing all comment threads grouped by file
+- Copy plan comments — button to copy all comments formatted for pasting into a plan
+- Copy all comments — button to copy all comments to clipboard
+- Plan watcher — auto-opens plans and inserts comments on next user prompt
+- Unit test suite — comprehensive tests for all major modules using vitest
+
+### Fixed
+
+- Auto-collapse setting not being respected when coding agent consumes comments
+
+### Changed
+
+- Improved icons for copy plan and copy all comments actions
+
 ## [0.0.7] - 2026-03-29
 
 ### Added
