@@ -474,7 +474,7 @@ describe('registerGeminiCliHook', () => {
 		const existing = {
 			hooks: {
 				BeforeModel: [
-					{ hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'gemini-cli', 'hooks', 'before_model_insert_comments.sh')}` }] }
+					{ hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'v1', 'gemini-cli', 'hooks', 'before_model_insert_comments.sh')}` }] }
 				]
 			}
 		};
@@ -551,7 +551,7 @@ describe('registerGeminiCliHook', () => {
 					{ hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'v1', 'hook_gemini.sh')}` }] }
 				],
 				BeforeModel: [
-					{ hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'gemini-cli', 'hooks', 'before_model_insert_comments.sh')}` }] }
+					{ hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'v1', 'gemini-cli', 'hooks', 'before_model_insert_comments.sh')}` }] }
 				]
 			}
 		};

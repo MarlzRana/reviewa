@@ -104,7 +104,7 @@ main().catch(() => process.exit(0));
 `;
 
 const HOOK_GEMINI_SH_CONTENT = `#!/bin/bash
-exec node "$HOME/.reviewa/gemini-cli/hooks/before_model_insert_comments.js"
+exec node "$HOME/.reviewa/v1/gemini-cli/hooks/before_model_insert_comments.js"
 `;
 
 export function installGeminiCliHookScript(): void {
@@ -178,7 +178,7 @@ export function registerGeminiCliHook(): void {
 		hooks: [
 			{
 				type: 'command',
-				command: `bash ${path.join(os.homedir(), '.reviewa', 'gemini-cli', 'hooks', 'before_model_insert_comments.sh')}`,
+				command: `bash ${path.join(os.homedir(), '.reviewa', 'v1', 'gemini-cli', 'hooks', 'before_model_insert_comments.sh')}`,
 				timeout: 10000,
 			},
 		],
