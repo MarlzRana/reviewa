@@ -178,7 +178,8 @@ export function createReviewaCommentController(
 			} else if (uri.scheme === 'file') {
 				absPath = uri.fsPath;
 				const isClaudeCodePlan = absPath.startsWith(CLAUDE_PLANS_DIR + path.sep) || absPath.startsWith(CLAUDE_PLANS_DIR + '/');
-				if (isClaudeCodePlan) {
+				const isGeminiCliPlan = /\/\.gemini\/tmp\/[^/]+\/[^/]+\/plans\/[^/]+\.md$/.test(absPath);
+				if (isClaudeCodePlan || isGeminiCliPlan) {
 					const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 					if (!workspaceFolder) {
 						vscode.window.showErrorMessage('Reviewa: No workspace folder open');
@@ -186,7 +187,7 @@ export function createReviewaCommentController(
 					}
 					logicalAbsPath = path.join(workspaceFolder, path.basename(absPath));
 					workspace = workspaceFolder;
-					intendedConsumer = 'claude_code';
+					intendedConsumer = isClaudeCodePlan ? 'claude_code' : 'gemini_cli';
 				} else {
 					const repoRoot = await getGitRepoRoot(uri);
 					if (!repoRoot) {

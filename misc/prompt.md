@@ -67,11 +67,17 @@ One hook registered in `~/.claude/settings.json` on extension activation:
 
 2.
 ## Mission
-I want to now implement support for Gemini plans, in the same we do for Claude plans. Gemini users should be able to see auto see their
+I want to now implement support for Gemini plans, in the same we do for Claude plans. Gemini users should be able to get their plans to auto open in VSCode, and they should be able to leave comments on it if need be, and copy them over if wanted (and the nice thing is that the BeforeAgent hook can also auto consume them, which is not something we have with Claude Code).
 
+## High-Level Implementation
+  Here is the rough schematic of how it should work (you will likely have to do extra steps, I am just capture the core idea):
+  - Register a BeforeTool hook at looks for writes that are match the ~/gemini/tmp/<some-project-dir-can-be-anything>/<session-id-can-be-anything>/plans/<plan-name>.md (use a glob or equivalent) and if it get's a match writes to the ~/.reviewa/gemini-cli/plan-metadata/<plan-name>.json - this json should follow the same schema and semantics as the Claude Code plan-metadata
+  - There will be a fileWatcher looking at ~/.reviewa/gemini-cli/plan-metadata/ and only if it gets relevant matches will it open (workspace cwd makes up/is logical path)
+  - Any comments we leave on Gemini plans with have an `intended_consumer` of gemini-cli (we will also have to update the hook script for the gemini cli to allow message with an `intended_consumer` of gemini-cli through)
 
+## Resources
+- VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
+- Gemini CLI source code with docs: /Users/marlzrana/gh/google-gemini/gemini-cli
 
-  Here is the rough schematic of how it should work (you will have to do extra steps, I am just capture the code idea):
-  - Register a BeforeTool hook at looks for writes that are match the ~/gemini/tmp/<some-project-dir-can-be-anything>/<session-id-can-be-anything>/plans/<plan-name>.md (use a glob or equivalent) and writes the
-  plan metadata to
-  - There will be a fileWatcher looking at ~/
+## Guidance
+Use the AskUserQuestion tool if anything in unclear/ambigious 

@@ -15,8 +15,8 @@ const mockedExecSync = vi.mocked(execSync);
 // Import modules under test
 import { hasClaudeCode, installClaudeCodeHookScript, installClaudeCodePlanHookScript, registerClaudeCodeHook, registerClaudeCodePlanHook, unregisterClaudeCodePlanHook } from '../../claudeCodeHookManager';
 import { hasCodex, installCodexHookScript, registerCodexHook } from '../../codexHookManager';
-import { hasGeminiCli, installGeminiCliHookScript, registerGeminiCliHook } from '../../geminiCliHookManager';
-import { installHookScripts, registerHooks, registerPlanHook, unregisterPlanHook } from '../../hookManager';
+import { hasGeminiCli, installGeminiCliHookScript, installGeminiCliPlanHookScript, registerGeminiCliHook, registerGeminiCliPlanHook, unregisterGeminiCliPlanHook } from '../../geminiCliHookManager';
+import { installHookScripts, registerHooks, registerClaudePlanHook, unregisterClaudePlanHook, registerGeminiPlanHook, unregisterGeminiPlanHook } from '../../hookManager';
 import { REVIEWA_DIR, CLAUDE_HOOKS_DIR, GEMINI_HOOKS_DIR } from '../../types';
 
 // Import vscode mock to access showWarningMessage
@@ -142,6 +142,30 @@ describe('Script Installation', () => {
 			expect(content).toContain('BeforeModel');
 			expect(content).toContain('llm_request');
 			expect(content).not.toContain('additionalContext');
+		});
+	});
+
+	describe('installGeminiCliPlanHookScript', () => {
+		it('creates hooks directory and writes plan hook files', () => {
+			installGeminiCliPlanHookScript();
+
+			expect(mockedFs.mkdirSync).toHaveBeenCalledWith(GEMINI_HOOKS_DIR, { recursive: true });
+
+			const hookJsPath = path.join(GEMINI_HOOKS_DIR, 'after_tool_plan_hook.js');
+			const hookShPath = path.join(GEMINI_HOOKS_DIR, 'after_tool_plan_hook.sh');
+
+			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookJsPath, expect.stringContaining('#!/usr/bin/env node'), { mode: 0o755 });
+			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookShPath, expect.stringContaining('#!/bin/bash'), { mode: 0o755 });
+		});
+
+		it('plan hook script checks for Gemini plans pattern and writes metadata', () => {
+			installGeminiCliPlanHookScript();
+			const call = mockedFs.writeFileSync.mock.calls.find(c => String(c[0]).endsWith('after_tool_plan_hook.js'));
+			expect(call).toBeDefined();
+			const content = String(call![1]);
+			expect(content).toContain('.gemini');
+			expect(content).toContain('plan-metadata');
+			expect(content).toContain('abs_path');
 		});
 	});
 });
@@ -565,6 +589,108 @@ describe('registerGeminiCliHook', () => {
 	});
 });
 
+// ─── Gemini CLI Plan Hook Registration ──────────────────────────
+
+describe('registerGeminiCliPlanHook', () => {
+	const settingsPath = path.join(HOME, '.gemini', 'settings.json');
+
+	it('adds AfterTool hook with write_file|replace matcher', () => {
+		mockedFs.readFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+
+		registerGeminiCliPlanHook();
+
+		const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
+		expect(written.hooks.AfterTool).toHaveLength(1);
+		expect(written.hooks.AfterTool[0].matcher).toBe('(write_file|replace)');
+		expect(written.hooks.AfterTool[0].hooks[0].command).toContain('reviewa');
+		expect(written.hooks.AfterTool[0].hooks[0].command).toContain('after_tool_plan_hook.sh');
+	});
+
+	it('is idempotent', () => {
+		const existing = {
+			hooks: {
+				AfterTool: [{
+					matcher: '(write_file|replace)',
+					hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'v1', 'gemini-cli', 'hooks', 'after_tool_plan_hook.sh')}` }]
+				}]
+			}
+		};
+		mockedFs.readFileSync.mockReturnValue(JSON.stringify(existing));
+
+		registerGeminiCliPlanHook();
+
+		expect(mockedFs.writeFileSync).not.toHaveBeenCalled();
+	});
+
+	it('preserves existing AfterTool hooks', () => {
+		const existing = {
+			hooks: {
+				AfterTool: [
+					{ hooks: [{ type: 'command', command: 'other-tool' }] }
+				]
+			}
+		};
+		mockedFs.readFileSync.mockReturnValue(JSON.stringify(existing));
+
+		registerGeminiCliPlanHook();
+
+		const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
+		expect(written.hooks.AfterTool).toHaveLength(2);
+	});
+});
+
+describe('unregisterGeminiCliPlanHook', () => {
+	it('removes reviewa entries from AfterTool', () => {
+		const existing = {
+			hooks: {
+				AfterTool: [
+					{ hooks: [{ type: 'command', command: 'other-tool' }] },
+					{ matcher: '(write_file|replace)', hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'v1', 'gemini-cli', 'hooks', 'after_tool_plan_hook.sh')}` }] },
+				]
+			}
+		};
+		mockedFs.readFileSync.mockReturnValue(JSON.stringify(existing));
+
+		unregisterGeminiCliPlanHook();
+
+		const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
+		expect(written.hooks.AfterTool).toHaveLength(1);
+		expect(written.hooks.AfterTool[0].hooks[0].command).toBe('other-tool');
+	});
+
+	it('deletes AfterTool array if it becomes empty', () => {
+		const existing = {
+			hooks: {
+				AfterTool: [
+					{ matcher: '(write_file|replace)', hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'v1', 'gemini-cli', 'hooks', 'after_tool_plan_hook.sh')}` }] },
+				]
+			}
+		};
+		mockedFs.readFileSync.mockReturnValue(JSON.stringify(existing));
+
+		unregisterGeminiCliPlanHook();
+
+		const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
+		expect(written.hooks.AfterTool).toBeUndefined();
+	});
+
+	it('returns early if settings file does not exist', () => {
+		mockedFs.readFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+
+		unregisterGeminiCliPlanHook();
+
+		expect(mockedFs.writeFileSync).not.toHaveBeenCalled();
+	});
+
+	it('returns early if no AfterTool array', () => {
+		mockedFs.readFileSync.mockReturnValue(JSON.stringify({ hooks: {} }));
+
+		unregisterGeminiCliPlanHook();
+
+		expect(mockedFs.writeFileSync).not.toHaveBeenCalled();
+	});
+});
+
 // ─── Orchestrator (hookManager.ts) ───────────────────────────────
 
 describe('hookManager orchestrator', () => {
@@ -597,6 +723,13 @@ describe('hookManager orchestrator', () => {
 			);
 			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
 				path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.sh'), expect.any(String), { mode: 0o755 }
+			);
+			// Gemini plan hook files
+			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
+				path.join(GEMINI_HOOKS_DIR, 'after_tool_plan_hook.js'), expect.any(String), { mode: 0o755 }
+			);
+			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
+				path.join(GEMINI_HOOKS_DIR, 'after_tool_plan_hook.sh'), expect.any(String), { mode: 0o755 }
 			);
 		});
 	});
@@ -646,15 +779,15 @@ describe('hookManager orchestrator', () => {
 		});
 	});
 
-	describe('registerPlanHook', () => {
+	describe('registerClaudePlanHook', () => {
 		it('registers plan hook if Claude Code is detected', () => {
 			mockedExecSync.mockReturnValue(Buffer.from('/usr/local/bin/claude'));
 			mockedFs.readFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
 
-			registerPlanHook();
+			registerClaudePlanHook();
 
 			const writeCalls = mockedFs.writeFileSync.mock.calls;
-			const settingsCall = writeCalls.find(c => String(c[0]).includes('settings.json'));
+			const settingsCall = writeCalls.find(c => String(c[0]).includes('.claude'));
 			expect(settingsCall).toBeDefined();
 			const written = JSON.parse(String(settingsCall![1]));
 			expect(written.hooks.PreToolUse).toBeDefined();
@@ -663,15 +796,14 @@ describe('hookManager orchestrator', () => {
 		it('does not register plan hook if Claude Code is not detected', () => {
 			mockedExecSync.mockImplementation(() => { throw new Error('not found'); });
 
-			registerPlanHook();
+			registerClaudePlanHook();
 
 			expect(mockedFs.writeFileSync).not.toHaveBeenCalled();
 		});
 	});
 
-	describe('unregisterPlanHook', () => {
+	describe('unregisterClaudePlanHook', () => {
 		it('calls unregister unconditionally (no CLI detection)', () => {
-			// Even if execSync would throw, unregister should still run
 			mockedExecSync.mockImplementation(() => { throw new Error('not found'); });
 			const existing = {
 				hooks: {
@@ -682,11 +814,54 @@ describe('hookManager orchestrator', () => {
 			};
 			mockedFs.readFileSync.mockReturnValue(JSON.stringify(existing));
 
-			unregisterPlanHook();
+			unregisterClaudePlanHook();
 
 			expect(mockedFs.writeFileSync).toHaveBeenCalled();
 			const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
 			expect(written.hooks.PreToolUse).toBeUndefined();
+		});
+	});
+
+	describe('registerGeminiPlanHook', () => {
+		it('registers plan hook if Gemini CLI is detected', () => {
+			mockedExecSync.mockReturnValue(Buffer.from('/usr/local/bin/gemini'));
+			mockedFs.readFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+
+			registerGeminiPlanHook();
+
+			const writeCalls = mockedFs.writeFileSync.mock.calls;
+			const settingsCall = writeCalls.find(c => String(c[0]).includes('.gemini'));
+			expect(settingsCall).toBeDefined();
+			const written = JSON.parse(String(settingsCall![1]));
+			expect(written.hooks.AfterTool).toBeDefined();
+		});
+
+		it('does not register plan hook if Gemini CLI is not detected', () => {
+			mockedExecSync.mockImplementation(() => { throw new Error('not found'); });
+
+			registerGeminiPlanHook();
+
+			expect(mockedFs.writeFileSync).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('unregisterGeminiPlanHook', () => {
+		it('calls unregister unconditionally (no CLI detection)', () => {
+			mockedExecSync.mockImplementation(() => { throw new Error('not found'); });
+			const existing = {
+				hooks: {
+					AfterTool: [
+						{ matcher: '(write_file|replace)', hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'v1', 'gemini-cli', 'hooks', 'after_tool_plan_hook.sh')}` }] },
+					]
+				}
+			};
+			mockedFs.readFileSync.mockReturnValue(JSON.stringify(existing));
+
+			unregisterGeminiPlanHook();
+
+			expect(mockedFs.writeFileSync).toHaveBeenCalled();
+			const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
+			expect(written.hooks.AfterTool).toBeUndefined();
 		});
 	});
 });

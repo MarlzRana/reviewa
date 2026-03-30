@@ -186,3 +186,120 @@ export function registerGeminiCliHook(): void {
 
 	fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
 }
+
+const PLAN_HOOK_GEMINI_JS_CONTENT = `#!/usr/bin/env node
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+const GEMINI_PLANS_PATTERN = /[\\/]\\.gemini[\\/]tmp[\\/][^\\/]+[\\/][^\\/]+[\\/]plans[\\/][^\\/]+\\.md$/;
+const METADATA_DIR = path.join(require('os').homedir(), '.reviewa', 'v1', 'gemini-cli', 'plan-metadata');
+
+async function main() {
+	const chunks = [];
+	for await (const chunk of process.stdin) {
+		chunks.push(chunk);
+	}
+	const input = JSON.parse(Buffer.concat(chunks).toString());
+	const filePath = input.tool_input?.file_path || '';
+
+	if (!GEMINI_PLANS_PATTERN.test(filePath)) {
+		process.exit(0);
+	}
+
+	const basename = path.basename(filePath);
+	const planName = basename.replace(/\\.md$/, '');
+	fs.mkdirSync(METADATA_DIR, { recursive: true });
+	fs.writeFileSync(
+		path.join(METADATA_DIR, planName + '.json'),
+		JSON.stringify({ cwd: input.cwd, abs_path: filePath, created_at: new Date().toISOString() })
+	);
+}
+
+main().catch(() => process.exit(0));
+`;
+
+const PLAN_HOOK_GEMINI_SH_CONTENT = `#!/bin/bash
+exec node "$HOME/.reviewa/v1/gemini-cli/hooks/after_tool_plan_hook.js"
+`;
+
+export function installGeminiCliPlanHookScript(): void {
+	fs.mkdirSync(GEMINI_HOOKS_DIR, { recursive: true });
+
+	const hookJsPath = path.join(GEMINI_HOOKS_DIR, 'after_tool_plan_hook.js');
+	fs.writeFileSync(hookJsPath, PLAN_HOOK_GEMINI_JS_CONTENT, { mode: 0o755 });
+
+	const hookShPath = path.join(GEMINI_HOOKS_DIR, 'after_tool_plan_hook.sh');
+	fs.writeFileSync(hookShPath, PLAN_HOOK_GEMINI_SH_CONTENT, { mode: 0o755 });
+}
+
+export function registerGeminiCliPlanHook(): void {
+	const settingsPath = path.join(os.homedir(), '.gemini', 'settings.json');
+	const settingsDir = path.dirname(settingsPath);
+
+	fs.mkdirSync(settingsDir, { recursive: true });
+
+	let settings: Record<string, unknown> = {};
+	try {
+		settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+	} catch {
+		// File doesn't exist or is invalid — start fresh
+	}
+
+	if (!settings.hooks || typeof settings.hooks !== 'object') {
+		settings.hooks = {};
+	}
+
+	const hooks = settings.hooks as Record<string, unknown[]>;
+
+	if (!Array.isArray(hooks.AfterTool)) {
+		hooks.AfterTool = [];
+	}
+
+	if (hooks.AfterTool.some(isReviewaHookEntry)) {
+		return;
+	}
+
+	hooks.AfterTool.push({
+		matcher: '(write_file|replace)',
+		hooks: [
+			{
+				type: 'command',
+				command: `bash ${path.join(os.homedir(), '.reviewa', 'v1', 'gemini-cli', 'hooks', 'after_tool_plan_hook.sh')}`,
+				timeout: 10000,
+			},
+		],
+	});
+
+	fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+}
+
+export function unregisterGeminiCliPlanHook(): void {
+	const settingsPath = path.join(os.homedir(), '.gemini', 'settings.json');
+
+	let settings: Record<string, unknown> = {};
+	try {
+		settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+	} catch {
+		return;
+	}
+
+	if (!settings.hooks || typeof settings.hooks !== 'object') {
+		return;
+	}
+
+	const hooks = settings.hooks as Record<string, unknown[]>;
+
+	if (!Array.isArray(hooks.AfterTool)) {
+		return;
+	}
+
+	hooks.AfterTool = hooks.AfterTool.filter(entry => !isReviewaHookEntry(entry));
+
+	if (hooks.AfterTool.length === 0) {
+		delete hooks.AfterTool;
+	}
+
+	fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+}

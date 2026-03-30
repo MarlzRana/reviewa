@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as vscode from 'vscode';
 import { __resetAllMocks, __setConfigValues } from './mocks/vscode';
 import { makeReviewaComment, makeMockThread, makeMockExtensionContext, resetFactories } from './helpers/factories';
-import { COMMENTS_DIR, CLAUDE_PLANS_DIR, PLAN_METADATA_DIR } from '../../types';
+import { COMMENTS_DIR, CLAUDE_PLANS_DIR, PLAN_METADATA_DIR, GEMINI_PLAN_METADATA_DIR } from '../../types';
 
 // ---- fs mock ----
 vi.mock('fs', () => {
@@ -27,12 +27,14 @@ vi.mock('fs', () => {
 });
 
 vi.mock('../../hookManager', () => ({
-	registerPlanHook: vi.fn(),
-	unregisterPlanHook: vi.fn(),
+	registerClaudePlanHook: vi.fn(),
+	unregisterClaudePlanHook: vi.fn(),
+	registerGeminiPlanHook: vi.fn(),
+	unregisterGeminiPlanHook: vi.fn(),
 }));
 
 import * as fs from 'fs';
-import { registerPlanHook, unregisterPlanHook } from '../../hookManager';
+import { registerClaudePlanHook, unregisterClaudePlanHook, registerGeminiPlanHook, unregisterGeminiPlanHook } from '../../hookManager';
 import { createPlanWatcher } from '../../planWatcher';
 import { registerCopyCommands } from '../../copy_comments';
 import { CommentStore } from '../../commentStore';
@@ -69,7 +71,7 @@ describe('createPlanWatcher', () => {
 			__setConfigValues({});
 			createPlanWatcher(context);
 
-			expect(registerPlanHook).not.toHaveBeenCalled();
+			expect(registerClaudePlanHook).not.toHaveBeenCalled();
 			expect(fs.watch).not.toHaveBeenCalled();
 		});
 
@@ -77,7 +79,7 @@ describe('createPlanWatcher', () => {
 			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			createPlanWatcher(context);
 
-			expect(registerPlanHook).toHaveBeenCalledTimes(1);
+			expect(registerClaudePlanHook).toHaveBeenCalledTimes(1);
 			expect(fs.watch).toHaveBeenCalledWith(CLAUDE_PLANS_DIR, expect.any(Function));
 			expect(fs.mkdirSync).toHaveBeenCalledWith(CLAUDE_PLANS_DIR, { recursive: true });
 			expect(fs.mkdirSync).toHaveBeenCalledWith(PLAN_METADATA_DIR, { recursive: true });
@@ -95,13 +97,13 @@ describe('createPlanWatcher', () => {
 			});
 
 			createPlanWatcher(context);
-			expect(registerPlanHook).not.toHaveBeenCalled();
+			expect(registerClaudePlanHook).not.toHaveBeenCalled();
 
 			// Now change config to enabled
 			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			configChangeListener({ affectsConfiguration: (s: string) => s === 'reviewa.planSupport' });
 
-			expect(registerPlanHook).toHaveBeenCalledTimes(1);
+			expect(registerClaudePlanHook).toHaveBeenCalledTimes(1);
 			expect(fs.watch).toHaveBeenCalled();
 		});
 
@@ -121,7 +123,7 @@ describe('createPlanWatcher', () => {
 			configChangeListener({ affectsConfiguration: (s: string) => s === 'reviewa.planSupport' });
 
 			expect(watcherClose).toHaveBeenCalled();
-			expect(unregisterPlanHook).toHaveBeenCalledTimes(1);
+			expect(unregisterClaudePlanHook).toHaveBeenCalledTimes(1);
 		});
 
 		it('ignores config changes for unrelated sections', () => {
@@ -135,7 +137,7 @@ describe('createPlanWatcher', () => {
 			createPlanWatcher(context);
 			configChangeListener({ affectsConfiguration: (s: string) => s === 'editor.fontSize' });
 
-			expect(registerPlanHook).not.toHaveBeenCalled();
+			expect(registerClaudePlanHook).not.toHaveBeenCalled();
 		});
 	});
 
@@ -259,7 +261,159 @@ describe('createPlanWatcher', () => {
 			disposeSubscription.dispose();
 
 			expect(watcherClose).toHaveBeenCalled();
-			expect(unregisterPlanHook).toHaveBeenCalled();
+			expect(unregisterClaudePlanHook).toHaveBeenCalled();
+		});
+	});
+});
+
+// =============================================================================
+// Gemini Plan Watcher Tests
+// =============================================================================
+describe('createPlanWatcher - Gemini', () => {
+	let context: vscode.ExtensionContext;
+
+	beforeEach(() => {
+		context = makeMockExtensionContext();
+		vscode.workspace.workspaceFolders = [
+			{ uri: vscode.Uri.file('/test/workspace'), name: 'workspace', index: 0 },
+		];
+	});
+
+	describe('initial config', () => {
+		it('does not create watcher when geminiCli config disabled', () => {
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: false, geminiCli: false } });
+			createPlanWatcher(context);
+
+			expect(registerGeminiPlanHook).not.toHaveBeenCalled();
+		});
+
+		it('creates watcher when geminiCli config enabled', () => {
+			__setConfigValues({ 'reviewa.planSupport': { geminiCli: true } });
+			createPlanWatcher(context);
+
+			expect(registerGeminiPlanHook).toHaveBeenCalledTimes(1);
+			expect(fs.watch).toHaveBeenCalledWith(GEMINI_PLAN_METADATA_DIR, expect.any(Function));
+			expect(fs.mkdirSync).toHaveBeenCalledWith(GEMINI_PLAN_METADATA_DIR, { recursive: true });
+		});
+	});
+
+	describe('config change', () => {
+		it('activates Gemini watcher independently of Claude', () => {
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
+			let configChangeListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+			vi.mocked(vscode.workspace.onDidChangeConfiguration).mockImplementation((listener: unknown) => {
+				configChangeListener = listener as typeof configChangeListener;
+				return { dispose: vi.fn() };
+			});
+
+			createPlanWatcher(context);
+			expect(registerGeminiPlanHook).not.toHaveBeenCalled();
+
+			// Enable Gemini
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true, geminiCli: true } });
+			configChangeListener({ affectsConfiguration: (s: string) => s === 'reviewa.planSupport' });
+
+			expect(registerGeminiPlanHook).toHaveBeenCalledTimes(1);
+		});
+
+		it('deactivates Gemini watcher independently of Claude', () => {
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true, geminiCli: true } });
+			let configChangeListener: (e: { affectsConfiguration: (s: string) => boolean }) => void = () => {};
+			vi.mocked(vscode.workspace.onDidChangeConfiguration).mockImplementation((listener: unknown) => {
+				configChangeListener = listener as typeof configChangeListener;
+				return { dispose: vi.fn() };
+			});
+
+			createPlanWatcher(context);
+			// Gemini watcher is the second fs.watch call
+			const geminiWatcherClose = vi.mocked(fs.watch).mock.results[1].value.close;
+
+			// Disable Gemini only
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true, geminiCli: false } });
+			configChangeListener({ affectsConfiguration: (s: string) => s === 'reviewa.planSupport' });
+
+			expect(geminiWatcherClose).toHaveBeenCalled();
+			expect(unregisterGeminiPlanHook).toHaveBeenCalledTimes(1);
+			// Claude should not be affected
+			expect(unregisterClaudePlanHook).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('file events', () => {
+		it('opens relevant Gemini plan files via metadata', () => {
+			__setConfigValues({ 'reviewa.planSupport': { geminiCli: true } });
+			vi.mocked(fs.readFileSync).mockReturnValue(
+				JSON.stringify({ cwd: '/test/workspace', abs_path: '/home/user/.gemini/tmp/proj/sess/plans/my-plan.md', created_at: '2026-01-01' })
+			);
+			vi.mocked(fs.existsSync).mockReturnValue(true);
+
+			createPlanWatcher(context);
+			const callback = getWatchCallback();
+
+			callback('rename', 'my-plan.json');
+
+			expect(vscode.window.showTextDocument).toHaveBeenCalled();
+		});
+
+		it('ignores non-.json files in metadata directory', () => {
+			__setConfigValues({ 'reviewa.planSupport': { geminiCli: true } });
+			createPlanWatcher(context);
+			const callback = getWatchCallback();
+
+			callback('rename', 'my-plan.md');
+			callback('rename', 'my-plan.txt');
+			callback('rename', null);
+
+			expect(vscode.window.showTextDocument).not.toHaveBeenCalled();
+		});
+
+		it('does not open plan when cwd does not match workspace', () => {
+			__setConfigValues({ 'reviewa.planSupport': { geminiCli: true } });
+			vi.mocked(fs.readFileSync).mockReturnValue(
+				JSON.stringify({ cwd: '/other/project', abs_path: '/home/user/.gemini/tmp/proj/sess/plans/plan.md', created_at: '2026-01-01' })
+			);
+
+			createPlanWatcher(context);
+			const callback = getWatchCallback();
+
+			callback('rename', 'plan.json');
+
+			expect(vscode.window.showTextDocument).not.toHaveBeenCalled();
+		});
+
+		it('does not open plan when abs_path does not exist', () => {
+			__setConfigValues({ 'reviewa.planSupport': { geminiCli: true } });
+			vi.mocked(fs.readFileSync).mockReturnValue(
+				JSON.stringify({ cwd: '/test/workspace', abs_path: '/home/user/.gemini/tmp/proj/sess/plans/plan.md', created_at: '2026-01-01' })
+			);
+			vi.mocked(fs.existsSync).mockReturnValue(false);
+
+			createPlanWatcher(context);
+			const callback = getWatchCallback();
+
+			callback('rename', 'plan.json');
+
+			expect(vscode.window.showTextDocument).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('dispose', () => {
+		it('deactivates both watchers on dispose', () => {
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true, geminiCli: true } });
+			vi.mocked(vscode.workspace.onDidChangeConfiguration).mockImplementation(() => ({ dispose: vi.fn() }));
+
+			createPlanWatcher(context);
+			const claudeWatcherClose = vi.mocked(fs.watch).mock.results[0].value.close;
+			const geminiWatcherClose = vi.mocked(fs.watch).mock.results[1].value.close;
+
+			// Find the dispose subscription (last one pushed)
+			const disposeSubscription = context.subscriptions[context.subscriptions.length - 1] as { dispose: () => void };
+			disposeSubscription.dispose();
+
+			expect(claudeWatcherClose).toHaveBeenCalled();
+			expect(geminiWatcherClose).toHaveBeenCalled();
+			expect(unregisterClaudePlanHook).toHaveBeenCalled();
+			expect(unregisterGeminiPlanHook).toHaveBeenCalled();
 		});
 	});
 });

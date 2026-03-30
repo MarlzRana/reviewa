@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import { REVIEWA_DIR } from './types';
 import { hasClaudeCode, installClaudeCodeHookScript, installClaudeCodePlanHookScript, registerClaudeCodeHook, registerClaudeCodePlanHook, unregisterClaudeCodePlanHook } from './claudeCodeHookManager';
 import { hasCodex, installCodexHookScript, registerCodexHook } from './codexHookManager';
-import { hasGeminiCli, installGeminiCliHookScript, registerGeminiCliHook } from './geminiCliHookManager';
+import { hasGeminiCli, installGeminiCliHookScript, installGeminiCliPlanHookScript, registerGeminiCliHook, registerGeminiCliPlanHook, unregisterGeminiCliPlanHook } from './geminiCliHookManager';
 
 export function installHookScripts(): void {
 	fs.mkdirSync(REVIEWA_DIR, { recursive: true });
@@ -10,6 +10,7 @@ export function installHookScripts(): void {
 	installClaudeCodePlanHookScript();
 	installCodexHookScript();
 	installGeminiCliHookScript();
+	installGeminiCliPlanHookScript();
 }
 
 export function registerHooks(): void {
@@ -24,12 +25,22 @@ export function registerHooks(): void {
 	}
 }
 
-export function registerPlanHook(): void {
+export function registerClaudePlanHook(): void {
 	if (hasClaudeCode()) {
 		registerClaudeCodePlanHook();
 	}
 }
 
-export function unregisterPlanHook(): void {
+export function unregisterClaudePlanHook(): void {
 	unregisterClaudeCodePlanHook();
+}
+
+export function registerGeminiPlanHook(): void {
+	if (hasGeminiCli()) {
+		registerGeminiCliPlanHook();
+	}
+}
+
+export function unregisterGeminiPlanHook(): void {
+	unregisterGeminiCliPlanHook();
 }

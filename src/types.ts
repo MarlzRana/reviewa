@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as os from 'os';
 
 export type CommentSide = 'file' | 'addition' | 'removal';
-export type IntendedConsumer = 'claude_code';
+export type IntendedConsumer = 'claude_code' | 'gemini_cli';
 
 export interface ReviewaComment {
 	uuid: string;
@@ -26,3 +26,4 @@ export const PLAN_METADATA_DIR = path.join(CLAUDE_DIR, 'plan-metadata');
 export const CLAUDE_PLANS_DIR = path.join(os.homedir(), '.claude', 'plans');
 export const GEMINI_DIR = path.join(os.homedir(), '.reviewa', 'v1', 'gemini-cli');
 export const GEMINI_HOOKS_DIR = path.join(GEMINI_DIR, 'hooks');
+export const GEMINI_PLAN_METADATA_DIR = path.join(GEMINI_DIR, 'plan-metadata');
