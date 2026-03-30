@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 import * as https from 'https';
-import { ReviewaComment, CommentSide } from './types';
+import { ReviewaComment, CommentSide, IntendedConsumer, CLAUDE_PLANS_DIR } from './types';
 import { parseGitUri, getGitRepoRoot } from './gitUtils';
 import { CommentStore } from './commentStore';
 
@@ -157,7 +157,9 @@ export function createReviewaCommentController(
 			const uri = reply.thread.uri;
 
 			let absPath: string;
-			let repoRoot: string | undefined;
+			let logicalAbsPath: string;
+			let workspace: string;
+			let intendedConsumer: IntendedConsumer | undefined;
 
 			if (uri.scheme === 'git') {
 				const gitInfo = parseGitUri(uri);
@@ -165,18 +167,34 @@ export function createReviewaCommentController(
 					vscode.window.showErrorMessage('Reviewa: Could not parse git URI');
 					return;
 				}
-				repoRoot = await getGitRepoRoot(uri);
+				const repoRoot = await getGitRepoRoot(uri);
 				if (!repoRoot) {
 					vscode.window.showErrorMessage('Reviewa: Could not determine git repository root');
 					return;
 				}
 				absPath = path.join(repoRoot, gitInfo.relativePath);
+				logicalAbsPath = absPath;
+				workspace = repoRoot;
 			} else if (uri.scheme === 'file') {
 				absPath = uri.fsPath;
-				repoRoot = await getGitRepoRoot(uri);
-				if (!repoRoot) {
-					vscode.window.showErrorMessage('Reviewa: Could not determine git repository root');
-					return;
+				const isClaudeCodePlan = absPath.startsWith(CLAUDE_PLANS_DIR + path.sep) || absPath.startsWith(CLAUDE_PLANS_DIR + '/');
+				if (isClaudeCodePlan) {
+					const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+					if (!workspaceFolder) {
+						vscode.window.showErrorMessage('Reviewa: No workspace folder open');
+						return;
+					}
+					logicalAbsPath = path.join(workspaceFolder, path.basename(absPath));
+					workspace = workspaceFolder;
+					intendedConsumer = 'claude_code';
+				} else {
+					const repoRoot = await getGitRepoRoot(uri);
+					if (!repoRoot) {
+						vscode.window.showErrorMessage('Reviewa: Could not determine git repository root');
+						return;
+					}
+					logicalAbsPath = absPath;
+					workspace = repoRoot;
 				}
 			} else {
 				return;
@@ -227,12 +245,14 @@ export function createReviewaCommentController(
 					uuid,
 					status: 'pending',
 					created_at: new Date().toISOString(),
-					workspace: repoRoot,
+					workspace,
 					abs_path: absPath,
+					logical_abs_path: logicalAbsPath,
 					line_number: lineNumber,
 					line_content: lineContent,
 					side,
 					content: reply.text,
+					...(intendedConsumer ? { intended_consumer: intendedConsumer } : {}),
 				};
 
 				CommentStore.saveComment(comment);

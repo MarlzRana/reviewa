@@ -54,6 +54,11 @@ async function main() {
 			continue;
 		}
 
+		const consumer = comment.intended_consumer;
+		if (consumer && consumer !== 'gemini_cli') {
+			continue;
+		}
+
 		if (!comment.abs_path || !comment.abs_path.startsWith(cwd)) {
 			continue;
 		}

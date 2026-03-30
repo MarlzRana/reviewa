@@ -184,6 +184,20 @@
           "type": "boolean",
           "default": false,
           "description": "Automatically collapse comment threads when a coding agent consumes them"
+        },
+        "reviewa.planSupport": {
+          "type": "object",
+          "default": {
+            "enabled": false
+          },
+          "description": "Automatically open Claude Code plan files when they are created or modified in the current workspace.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Watch for Claude Code plan files and allow inline comments"
+            }
+          }
         }
       }
     }

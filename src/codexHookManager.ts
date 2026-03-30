@@ -51,6 +51,10 @@ def main():
         except Exception:
             continue
 
+        consumer = comment.get("intended_consumer")
+        if consumer is not None and consumer != "codex":
+            continue
+
         abs_path = comment.get("abs_path", "")
         if not abs_path or not abs_path.startswith(cwd):
             continue

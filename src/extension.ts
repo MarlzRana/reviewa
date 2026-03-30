@@ -5,6 +5,7 @@ import { createFileWatcher } from './fileWatcher';
 import { createStatusBarItem } from './statusBar';
 import { createCommentTreeView } from './commentTreeView';
 import { installHookScripts, registerHooks } from './hookManager';
+import { createPlanWatcher } from './planWatcher';
 
 let store: CommentStore;
 
@@ -18,6 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
 	createFileWatcher(context, store);
 	createStatusBarItem(context, store);
 	createCommentTreeView(context, store);
+	createPlanWatcher(context);
 }
 
 export function deactivate() {
