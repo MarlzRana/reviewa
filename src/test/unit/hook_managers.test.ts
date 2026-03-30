@@ -17,7 +17,7 @@ import { hasClaudeCode, installClaudeCodeHookScript, installClaudeCodePlanHookSc
 import { hasCodex, installCodexHookScript, registerCodexHook } from '../../codexHookManager';
 import { hasGeminiCli, installGeminiCliHookScript, registerGeminiCliHook } from '../../geminiCliHookManager';
 import { installHookScripts, registerHooks, registerPlanHook, unregisterPlanHook } from '../../hookManager';
-import { REVIEWA_DIR, CLAUDE_HOOKS_DIR } from '../../types';
+import { REVIEWA_DIR, CLAUDE_HOOKS_DIR, GEMINI_HOOKS_DIR } from '../../types';
 
 // Import vscode mock to access showWarningMessage
 import * as vscode from 'vscode';
@@ -122,22 +122,26 @@ describe('Script Installation', () => {
 	});
 
 	describe('installGeminiCliHookScript', () => {
-		it('writes hook_gemini.js and hook_gemini.sh with correct permissions', () => {
+		it('creates hooks directory and writes scripts with correct permissions', () => {
 			installGeminiCliHookScript();
 
-			const hookJsPath = path.join(REVIEWA_DIR, 'hook_gemini.js');
-			const hookShPath = path.join(REVIEWA_DIR, 'hook_gemini.sh');
+			expect(mockedFs.mkdirSync).toHaveBeenCalledWith(GEMINI_HOOKS_DIR, { recursive: true });
+
+			const hookJsPath = path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.js');
+			const hookShPath = path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.sh');
 
 			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookJsPath, expect.stringContaining('#!/usr/bin/env node'), { mode: 0o755 });
 			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookShPath, expect.stringContaining('#!/bin/bash'), { mode: 0o755 });
 		});
 
-		it('hook_gemini.js content uses BeforeAgent event', () => {
+		it('hook script uses BeforeModel event and injects into llm_request.messages', () => {
 			installGeminiCliHookScript();
-			const call = mockedFs.writeFileSync.mock.calls.find(c => String(c[0]).endsWith('hook_gemini.js'));
+			const call = mockedFs.writeFileSync.mock.calls.find(c => String(c[0]).endsWith('before_model_insert_comments.js'));
 			expect(call).toBeDefined();
 			const content = String(call![1]);
-			expect(content).toContain('BeforeAgent');
+			expect(content).toContain('BeforeModel');
+			expect(content).toContain('llm_request');
+			expect(content).not.toContain('additionalContext');
 		});
 	});
 });
@@ -452,7 +456,7 @@ describe('registerCodexHook', () => {
 describe('registerGeminiCliHook', () => {
 	const settingsPath = path.join(HOME, '.gemini', 'settings.json');
 
-	it('creates settings.json from scratch with BeforeAgent hook', () => {
+	it('creates settings.json from scratch with BeforeModel hook', () => {
 		mockedFs.readFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
 
 		registerGeminiCliHook();
@@ -460,17 +464,17 @@ describe('registerGeminiCliHook', () => {
 		expect(mockedFs.mkdirSync).toHaveBeenCalledWith(path.join(HOME, '.gemini'), { recursive: true });
 
 		const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
-		expect(written.hooks.BeforeAgent).toHaveLength(1);
-		expect(written.hooks.BeforeAgent[0].hooks[0].command).toContain('reviewa');
-		expect(written.hooks.BeforeAgent[0].hooks[0].command).toContain('hook_gemini.sh');
-		expect(written.hooks.BeforeAgent[0].hooks[0].timeout).toBe(10000);
+		expect(written.hooks.BeforeModel).toHaveLength(1);
+		expect(written.hooks.BeforeModel[0].hooks[0].command).toContain('reviewa');
+		expect(written.hooks.BeforeModel[0].hooks[0].command).toContain('before_model_insert_comments.sh');
+		expect(written.hooks.BeforeModel[0].hooks[0].timeout).toBe(10000);
 	});
 
 	it('is idempotent', () => {
 		const existing = {
 			hooks: {
-				BeforeAgent: [
-					{ hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'v1', 'hook_gemini.sh')}` }] }
+				BeforeModel: [
+					{ hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'gemini-cli', 'hooks', 'before_model_insert_comments.sh')}` }] }
 				]
 			}
 		};
@@ -484,7 +488,7 @@ describe('registerGeminiCliHook', () => {
 	it('preserves existing hooks', () => {
 		const existing = {
 			hooks: {
-				BeforeAgent: [
+				BeforeModel: [
 					{ hooks: [{ type: 'command', command: 'other-tool' }] }
 				]
 			}
@@ -494,7 +498,70 @@ describe('registerGeminiCliHook', () => {
 		registerGeminiCliHook();
 
 		const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
-		expect(written.hooks.BeforeAgent).toHaveLength(2);
+		expect(written.hooks.BeforeModel).toHaveLength(2);
+	});
+
+	it('migrates legacy BeforeAgent reviewa hook to BeforeModel', () => {
+		const existing = {
+			hooks: {
+				BeforeAgent: [
+					{ hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'v1', 'hook_gemini.sh')}` }] },
+					{ hooks: [{ type: 'command', command: 'other-tool' }] }
+				]
+			}
+		};
+		mockedFs.readFileSync.mockReturnValue(JSON.stringify(existing));
+
+		registerGeminiCliHook();
+
+		// First write: legacy cleanup
+		const afterCleanup = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
+		expect(afterCleanup.hooks.BeforeAgent).toHaveLength(1);
+		expect(afterCleanup.hooks.BeforeAgent[0].hooks[0].command).toBe('other-tool');
+		// Second write: BeforeModel registration
+		const final = JSON.parse(String(mockedFs.writeFileSync.mock.calls[1][1]));
+		expect(final.hooks.BeforeModel).toHaveLength(1);
+		expect(final.hooks.BeforeModel[0].hooks[0].command).toContain('before_model_insert_comments.sh');
+	});
+
+	it('removes BeforeAgent key entirely when only reviewa hook was present', () => {
+		const existing = {
+			hooks: {
+				BeforeAgent: [
+					{ hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'v1', 'hook_gemini.sh')}` }] }
+				]
+			}
+		};
+		mockedFs.readFileSync.mockReturnValue(JSON.stringify(existing));
+
+		registerGeminiCliHook();
+
+		// First write: legacy cleanup
+		const afterCleanup = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
+		expect(afterCleanup.hooks.BeforeAgent).toBeUndefined();
+		// Second write: BeforeModel registration
+		const final = JSON.parse(String(mockedFs.writeFileSync.mock.calls[1][1]));
+		expect(final.hooks.BeforeModel).toHaveLength(1);
+	});
+
+	it('cleans up legacy BeforeAgent even when BeforeModel is already registered', () => {
+		const existing = {
+			hooks: {
+				BeforeAgent: [
+					{ hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'v1', 'hook_gemini.sh')}` }] }
+				],
+				BeforeModel: [
+					{ hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'gemini-cli', 'hooks', 'before_model_insert_comments.sh')}` }] }
+				]
+			}
+		};
+		mockedFs.readFileSync.mockReturnValue(JSON.stringify(existing));
+
+		registerGeminiCliHook();
+
+		const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
+		expect(written.hooks.BeforeAgent).toBeUndefined();
+		expect(written.hooks.BeforeModel).toHaveLength(1);
 	});
 });
 
@@ -524,12 +591,12 @@ describe('hookManager orchestrator', () => {
 			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
 				path.join(REVIEWA_DIR, 'hook.py'), expect.any(String), { mode: 0o755 }
 			);
-			// Gemini hook_gemini.js + hook_gemini.sh
+			// Gemini before_model_insert_comments.js + .sh
 			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(REVIEWA_DIR, 'hook_gemini.js'), expect.any(String), { mode: 0o755 }
+				path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.js'), expect.any(String), { mode: 0o755 }
 			);
 			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(REVIEWA_DIR, 'hook_gemini.sh'), expect.any(String), { mode: 0o755 }
+				path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.sh'), expect.any(String), { mode: 0o755 }
 			);
 		});
 	});

@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { execSync } from 'child_process';
-import { REVIEWA_DIR } from './types';
+import { GEMINI_HOOKS_DIR } from './types';
 
 export function hasGeminiCli(): boolean {
 	try {
@@ -79,7 +79,7 @@ async function main() {
 		parts.push('In \\\`' + relPath + '\\\` at line ' + comment.line_number + ':\\n\\\`\\\`\\\`\\n' + formatted + '\\n\\\`\\\`\\\`\\n' + comment.content);
 	}
 
-	const additionalContext = parts.join('\\n\\n');
+	const contextText = parts.join('\\n\\n');
 
 	for (const { filePath } of matchedComments) {
 		try {
@@ -87,10 +87,14 @@ async function main() {
 		} catch {}
 	}
 
+	const llmRequest = (input.llm_request && typeof input.llm_request === 'object') ? input.llm_request : {};
+	const messages = Array.isArray(llmRequest.messages) ? llmRequest.messages.slice() : [];
+	messages.push({ role: 'user', content: contextText });
+
 	const output = {
 		hookSpecificOutput: {
-			hookEventName: 'BeforeAgent',
-			additionalContext,
+			hookEventName: 'BeforeModel',
+			llm_request: Object.assign({}, llmRequest, { messages }),
 		},
 	};
 	process.stdout.write(JSON.stringify(output));
@@ -100,15 +104,34 @@ main().catch(() => process.exit(0));
 `;
 
 const HOOK_GEMINI_SH_CONTENT = `#!/bin/bash
-exec node "$HOME/.reviewa/v1/hook_gemini.js"
+exec node "$HOME/.reviewa/gemini-cli/hooks/before_model_insert_comments.js"
 `;
 
 export function installGeminiCliHookScript(): void {
-	const hookJsPath = path.join(REVIEWA_DIR, 'hook_gemini.js');
+	fs.mkdirSync(GEMINI_HOOKS_DIR, { recursive: true });
+
+	const hookJsPath = path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.js');
 	fs.writeFileSync(hookJsPath, HOOK_GEMINI_JS_CONTENT, { mode: 0o755 });
 
-	const hookShPath = path.join(REVIEWA_DIR, 'hook_gemini.sh');
+	const hookShPath = path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.sh');
 	fs.writeFileSync(hookShPath, HOOK_GEMINI_SH_CONTENT, { mode: 0o755 });
+}
+
+function isReviewaHookEntry(entry: unknown): boolean {
+	if (typeof entry !== 'object' || entry === null) {
+		return false;
+	}
+	const innerHooks = (entry as Record<string, unknown>).hooks;
+	if (!Array.isArray(innerHooks)) {
+		return false;
+	}
+	return innerHooks.some((h: unknown) => {
+		if (typeof h !== 'object' || h === null) {
+			return false;
+		}
+		const cmd = (h as Record<string, unknown>).command;
+		return typeof cmd === 'string' && cmd.includes('reviewa');
+	});
 }
 
 export function registerGeminiCliHook(): void {
@@ -130,37 +153,32 @@ export function registerGeminiCliHook(): void {
 
 	const hooks = settings.hooks as Record<string, unknown[]>;
 
-	if (!Array.isArray(hooks.BeforeAgent)) {
-		hooks.BeforeAgent = [];
+	// Reviewa previously registered under BeforeAgent — remove any leftover entries
+	if (Array.isArray(hooks.BeforeAgent)) {
+		const filtered = hooks.BeforeAgent.filter(entry => !isReviewaHookEntry(entry));
+		if (filtered.length !== hooks.BeforeAgent.length) {
+			if (filtered.length === 0) {
+				delete hooks.BeforeAgent;
+			} else {
+				hooks.BeforeAgent = filtered;
+			}
+			fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+		}
 	}
 
-	// Check if reviewa hook is already registered
-	const alreadyRegistered = hooks.BeforeAgent.some((entry: unknown) => {
-		if (typeof entry !== 'object' || entry === null) {
-			return false;
-		}
-		const innerHooks = (entry as Record<string, unknown>).hooks;
-		if (!Array.isArray(innerHooks)) {
-			return false;
-		}
-		return innerHooks.some((h: unknown) => {
-			if (typeof h !== 'object' || h === null) {
-				return false;
-			}
-			const cmd = (h as Record<string, unknown>).command;
-			return typeof cmd === 'string' && cmd.includes('reviewa');
-		});
-	});
+	if (!Array.isArray(hooks.BeforeModel)) {
+		hooks.BeforeModel = [];
+	}
 
-	if (alreadyRegistered) {
+	if (hooks.BeforeModel.some(isReviewaHookEntry)) {
 		return;
 	}
 
-	hooks.BeforeAgent.push({
+	hooks.BeforeModel.push({
 		hooks: [
 			{
 				type: 'command',
-				command: `bash ${path.join(os.homedir(), '.reviewa', 'v1', 'hook_gemini.sh')}`,
+				command: `bash ${path.join(os.homedir(), '.reviewa', 'gemini-cli', 'hooks', 'before_model_insert_comments.sh')}`,
 				timeout: 10000,
 			},
 		],

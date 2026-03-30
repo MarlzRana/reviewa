@@ -24,3 +24,5 @@ export const CLAUDE_DIR = path.join(REVIEWA_DIR, 'claude');
 export const CLAUDE_HOOKS_DIR = path.join(CLAUDE_DIR, 'hooks');
 export const PLAN_METADATA_DIR = path.join(CLAUDE_DIR, 'plan-metadata');
 export const CLAUDE_PLANS_DIR = path.join(os.homedir(), '.claude', 'plans');
+export const GEMINI_DIR = path.join(os.homedir(), '.reviewa', 'gemini-cli');
+export const GEMINI_HOOKS_DIR = path.join(GEMINI_DIR, 'hooks');
