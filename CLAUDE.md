@@ -73,4 +73,32 @@ npm run watch      # dev mode with file watching
 - GitHub Pull Request extension (reference for Comment Controller patterns and git URI resolution): !`echo $HOME`/gh/Microsoft/vscode-pull-request-github
 
 ## Testing
+
+### Unit Tests
+```
+npm run test:unit      # run all unit tests (vitest)
+npx vitest run <file>  # run a specific test file
+```
+
+- Framework: vitest with custom vscode API mock (`src/test/unit/mocks/vscode.ts`)
+- Test helpers: `src/test/unit/helpers/factories.ts` — `makeReviewaComment()`, `makeMockThread()`, `makeMockComment()`, `makeMockExtensionContext()`
+- Config: `vitest.config.ts` aliases `vscode` to the mock module automatically
+- Mock `fs` and `child_process` with `vi.mock()` per test file as needed
+
+#### Test files by domain
+- `src/test/unit/comment_store.test.ts` — CommentStore CRUD, file I/O, suppression, events
+- `src/test/unit/comment_controller.test.ts` — all 7 command handlers, diff side detection, regression tests
+- `src/test/unit/file_watcher.test.ts` — hook consumption, suppression, auto-collapse
+- `src/test/unit/hook_managers.test.ts` — CLI detection, script installation, hook registration for all agents
+- `src/test/unit/ui_components.test.ts` — tree view data provider, status bar item
+- `src/test/unit/plan_and_copy.test.ts` — plan watcher, copy commands, format helpers
+
+#### Rules for coding agents
+- **Every new feature must include unit tests** covering the happy path and key edge cases
+- **Every bug fix must include a regression test** that fails without the fix and passes with it
+- Run `npm run test:unit` before considering any change complete — all tests must pass
+- When modifying existing code, update the corresponding test file to reflect the new behavior
+- Follow existing test patterns: mock `fs`/`child_process` at module level, use factory helpers, reset mocks in `beforeEach`/`afterEach`
+
+### Manual Testing
 Launch Extension Development Host (F5), open any file or diff, and leave comments via the gutter icon. Comments work in normal file views, split diff view (both sides), and inline diff view (modified side only — removed lines in inline mode are a VS Code limitation).
