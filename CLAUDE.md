@@ -27,9 +27,10 @@ VS Code extension that lets developers leave inline code review comments on any 
 - **Codex hook** (`src/codexHookManager.ts`): `~/.reviewa/v1/hook.py` (Python stdlib only), registered in `~/.codex/hooks.json`
   - Ensures `codex_hooks = true` in `~/.codex/config.toml` `[features]` section
   - Shows a VS Code warning if `codex_hooks` is explicitly set to `false`
-- **Gemini CLI hook** (`src/geminiCliHookManager.ts`): `~/.reviewa/v1/hook_gemini.js` (Node.js) + `hook_gemini.sh` wrapper, registered in `~/.gemini/settings.json`
-  - Uses `BeforeAgent` hook event (not `UserPromptSubmit`) — Gemini's equivalent that fires before agent planning
-- Claude and Codex hooks use `UserPromptSubmit`; Gemini uses `BeforeAgent` — all filter comments by `cwd`, inject as `additionalContext`, then delete consumed JSON files
+- **Gemini CLI hook** (`src/geminiCliHookManager.ts`): `~/.reviewa/v1/gemini-cli/hooks/before_model_insert_comments.js` (Node.js) + `.sh` wrapper, registered in `~/.gemini/settings.json`
+  - Uses `BeforeModel` hook event — injects comments directly into the LLM request messages
+  - Also registers an `AfterTool` hook (`after_tool_plan_hook.js`) to track Gemini plan file creation for the plan watcher
+- Claude and Codex hooks use `UserPromptSubmit`; Gemini uses `BeforeModel` — all filter comments by `cwd`, then delete consumed JSON files
 - Comments are single-use — whichever CLI processes a comment first consumes and deletes it from disk
 - Hook scripts are embedded as string constants and written to disk on activation
 - Context format per comment:

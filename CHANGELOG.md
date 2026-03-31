@@ -2,6 +2,24 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.9] - 2026-03-31
+
+### Added
+
+- Gemini CLI plan support — auto-opens Gemini CLI plan files and allows inline commenting on them
+- Plan support enabled by default for both Claude Code and Gemini CLI
+
+### Fixed
+
+- Gemini CLI hook now uses logical path for correct matching on plan file comments
+- Version directory missing for gemini-cli hook scripts
+
+### Changed
+
+- Gemini CLI hook migrated from `BeforeAgent` to `BeforeModel` callback to support plan comment injection
+- `reviewa.planSupport` setting restructured as per-CLI dictionary (`claudeCode`, `geminiCli`) replacing single `enabled` flag
+- Gemini CLI hook scripts moved to dedicated `~/.reviewa/v1/gemini-cli/hooks/` directory
+
 ## [0.0.8] - 2026-03-30
 
 ### Added
