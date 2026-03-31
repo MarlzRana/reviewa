@@ -2,6 +2,19 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.10] - 2026-03-31
+
+### Changed
+
+- Split plan watchers into separate per-CLI modules (`claudeCodePlanWatcher`, `geminiCliPlanWatcher`)
+- Claude Code plan hook now uses regex pattern matching instead of hardcoded plans directory path
+- Claude Code plan hook writes plan metadata files to support future plan view feature
+
+### Added
+
+- Known limitations section in README — documents Windows unsupported, Claude Code plan injection timing, Codex plan review, and Copilot CLI gaps
+- Windows platform guard — extension deactivates gracefully on Windows with an informational message
+
 ## [0.0.9] - 2026-03-31
 
 ### Added
