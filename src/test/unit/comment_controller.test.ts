@@ -196,7 +196,7 @@ describe('commentController', () => {
 
 			// Mark first comment as processed
 			const firstComment = reply.thread.comments[0];
-			const processedComment = { ...firstComment, label: 'Processed', contextValue: 'processed' };
+			const processedComment = { ...firstComment, label: 'Seen', contextValue: 'processed' };
 			reply.thread.comments = [processedComment];
 
 			// Add second comment
@@ -241,7 +241,7 @@ describe('commentController', () => {
 			expect(store.get('generated-uuid-1')).toBeUndefined();
 		});
 
-		it('REGRESSION: deleting last pending from mixed thread sets label to "All comments processed"', async () => {
+		it('REGRESSION: deleting last pending from mixed thread sets label to "All comments seen"', async () => {
 			// Create two comments
 			const reply = makeReply({ text: 'First' });
 			await handlers['reviewa.createComment'](reply);
@@ -251,7 +251,7 @@ describe('commentController', () => {
 
 			// Mark first comment as processed
 			const comments = [...reply.thread.comments];
-			comments[0] = { ...comments[0], label: 'Processed', contextValue: 'processed' };
+			comments[0] = { ...comments[0], label: 'Seen', contextValue: 'processed' };
 			reply.thread.comments = comments;
 
 			// Delete the second (pending) comment
@@ -260,7 +260,7 @@ describe('commentController', () => {
 
 			// Thread should still exist with only the processed comment
 			expect(reply.thread.comments).toHaveLength(1);
-			expect(reply.thread.label).toBe('All comments processed');
+			expect(reply.thread.label).toBe('All comments seen');
 		});
 
 		it('REGRESSION: only actionable texts included in content after deleting processed comment', async () => {
@@ -276,7 +276,7 @@ describe('commentController', () => {
 
 			// Mark second comment as processed
 			const comments = [...reply.thread.comments];
-			comments[1] = { ...comments[1], label: 'Processed', contextValue: 'processed' };
+			comments[1] = { ...comments[1], label: 'Seen', contextValue: 'processed' };
 			reply.thread.comments = comments;
 
 			// Delete the processed comment
@@ -299,7 +299,7 @@ describe('commentController', () => {
 
 			// Mark second comment as processed
 			const comments = [...reply.thread.comments];
-			comments[1] = { ...comments[1], label: 'Processed', contextValue: 'processed' };
+			comments[1] = { ...comments[1], label: 'Seen', contextValue: 'processed' };
 			reply.thread.comments = comments;
 
 			// Clear previous calls to unlinkSync
@@ -388,7 +388,7 @@ describe('commentController', () => {
 
 			// Mark as processed
 			const comments = [...reply.thread.comments];
-			comments[0] = { ...comments[0], label: 'Processed', contextValue: 'processed' };
+			comments[0] = { ...comments[0], label: 'Seen', contextValue: 'processed' };
 			reply.thread.comments = comments;
 
 			// Edit and save
@@ -414,7 +414,7 @@ describe('commentController', () => {
 
 			// Mark second as processed
 			const comments = [...reply.thread.comments];
-			comments[1] = { ...comments[1], label: 'Processed', contextValue: 'processed' };
+			comments[1] = { ...comments[1], label: 'Seen', contextValue: 'processed' };
 			reply.thread.comments = comments;
 
 			// Edit and save first comment
@@ -436,7 +436,7 @@ describe('commentController', () => {
 
 			// Mark as processed first
 			const comments = [...reply.thread.comments];
-			comments[0] = { ...comments[0], label: 'Processed', contextValue: 'processed' };
+			comments[0] = { ...comments[0], label: 'Seen', contextValue: 'processed' };
 			reply.thread.comments = comments;
 
 			handlers['reviewa.markRepending'](reply.thread.comments[0]);
@@ -452,7 +452,7 @@ describe('commentController', () => {
 
 			// Mark processed
 			const comments = [...reply.thread.comments];
-			comments[0] = { ...comments[0], label: 'Processed', contextValue: 'processed' };
+			comments[0] = { ...comments[0], label: 'Seen', contextValue: 'processed' };
 			reply.thread.comments = comments;
 			reply.thread.state = vscode.CommentThreadState.Resolved;
 
@@ -467,7 +467,7 @@ describe('commentController', () => {
 			await handlers['reviewa.createComment'](reply);
 
 			const comments = [...reply.thread.comments];
-			comments[0] = { ...comments[0], label: 'Processed', contextValue: 'processed' };
+			comments[0] = { ...comments[0], label: 'Seen', contextValue: 'processed' };
 			reply.thread.comments = comments;
 
 			handlers['reviewa.markRepending'](reply.thread.comments[0]);
@@ -485,7 +485,7 @@ describe('commentController', () => {
 			handlers['reviewa.markProcessed'](reply.thread.comments[0]);
 
 			const updated = reply.thread.comments[0];
-			expect(updated.label).toBe('Processed');
+			expect(updated.label).toBe('Seen');
 			expect(updated.contextValue).toBe('processed');
 		});
 
@@ -516,7 +516,7 @@ describe('commentController', () => {
 
 			handlers['reviewa.markProcessed'](reply.thread.comments[0]);
 
-			expect(reply.thread.label).toBe('All comments processed');
+			expect(reply.thread.label).toBe('All comments seen');
 			expect(fs.unlinkSync).toHaveBeenCalled();
 
 			// The tracked data should still exist in store but with processed status

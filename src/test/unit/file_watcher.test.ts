@@ -64,7 +64,7 @@ describe('createFileWatcher', () => {
 
 		expect(thread.comments).toHaveLength(2);
 		for (const c of thread.comments) {
-			expect(c.label).toBe('Processed');
+			expect(c.label).toBe('Seen');
 			expect(c.contextValue).toBe('processed');
 		}
 	});
@@ -179,8 +179,8 @@ describe('createFileWatcher', () => {
 		expect(thread.collapsibleState).toBe(CommentThreadCollapsibleState.Expanded);
 	});
 
-	// Scenario 9: Thread label always "All comments processed"
-	it('sets thread label to "All comments processed" after processing', () => {
+	// Scenario 9: Thread label always "All comments seen"
+	it('sets thread label to "All comments seen" after processing', () => {
 		createFileWatcher(context, store);
 
 		const thread = makeMockThread({
@@ -193,7 +193,7 @@ describe('createFileWatcher', () => {
 		vi.mocked(fs.existsSync).mockReturnValueOnce(false);
 		triggerWatch('rename', 'abc-123.json');
 
-		expect(thread.label).toBe('All comments processed');
+		expect(thread.label).toBe('All comments seen');
 	});
 
 	// Scenario 10: Status update and notifyPendingCountChanged

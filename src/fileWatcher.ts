@@ -32,11 +32,11 @@ export function createFileWatcher(
 
 			tracked.thread.comments = tracked.thread.comments.map(c => ({
 				...c,
-				label: 'Processed',
+				label: 'Seen',
 				contextValue: 'processed',
 			}));
-			const hasPending = tracked.thread.comments.some(c => c.label === 'Pending');
-			tracked.thread.label = hasPending ? 'Pending comments' : 'All comments processed';
+			const hasPending = tracked.thread.comments.some(c => c.contextValue === 'pending' || c.contextValue === 'repending');
+			tracked.thread.label = hasPending ? 'Pending comments' : 'All comments seen';
 			if (!hasPending) {
 				const autoCollapse = vscode.workspace.getConfiguration('reviewa').get<boolean>('autoCollapseOnCodingAgentConsumption', true);
 				if (autoCollapse) {

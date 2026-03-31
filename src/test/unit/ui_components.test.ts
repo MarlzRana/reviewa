@@ -298,11 +298,11 @@ describe('commentTreeView', () => {
 		});
 
 		it('shows comment icon for actionable (Pending) reply', () => {
-			const pendingComment = makeMockComment({ label: 'Pending' });
+			const pendingComment = makeMockComment({ label: 'Pending', contextValue: 'pending' });
 			const t = makeTrackedComment({
 				data: { abs_path: '/src/a.ts' },
 				commentTexts: ['fix this', 'also fix this'],
-				threadComments: [pendingComment, makeMockComment({ label: 'Processed' })],
+				threadComments: [pendingComment, makeMockComment({ label: 'Seen', contextValue: 'processed' })],
 			});
 			store.add(t.data.uuid, t.data, t.thread, t.commentTexts);
 
@@ -318,11 +318,11 @@ describe('commentTreeView', () => {
 		});
 
 		it('shows comment icon for Re-pending reply', () => {
-			const rePendingComment = makeMockComment({ label: 'Re-pending' });
+			const rePendingComment = makeMockComment({ label: 'Re-pending', contextValue: 'repending' });
 			const t = makeTrackedComment({
 				data: { abs_path: '/src/a.ts' },
 				commentTexts: ['fix this', 'extra'],
-				threadComments: [rePendingComment, makeMockComment({ label: 'Processed' })],
+				threadComments: [rePendingComment, makeMockComment({ label: 'Seen', contextValue: 'processed' })],
 			});
 			store.add(t.data.uuid, t.data, t.thread, t.commentTexts);
 
@@ -335,11 +335,11 @@ describe('commentTreeView', () => {
 		});
 
 		it('shows pass icon for processed reply', () => {
-			const processedComment = makeMockComment({ label: 'Processed' });
+			const processedComment = makeMockComment({ label: 'Seen', contextValue: 'processed' });
 			const t = makeTrackedComment({
 				data: { abs_path: '/src/a.ts' },
 				commentTexts: ['done', 'extra'],
-				threadComments: [processedComment, makeMockComment({ label: 'Processed' })],
+				threadComments: [processedComment, makeMockComment({ label: 'Seen', contextValue: 'processed' })],
 			});
 			store.add(t.data.uuid, t.data, t.thread, t.commentTexts);
 

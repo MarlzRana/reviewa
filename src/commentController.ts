@@ -116,7 +116,7 @@ async function readLineContent(uri: vscode.Uri, lineNumber: number, absPath: str
 }
 
 function isActionable(c: vscode.Comment): boolean {
-	return c.label === 'Pending' || c.label === 'Re-pending';
+	return c.contextValue === 'pending' || c.contextValue === 'repending';
 }
 
 function getActionableTexts(comments: readonly vscode.Comment[], commentTexts: string[]): string[] {
@@ -301,7 +301,7 @@ export function createReviewaCommentController(
 			} else {
 				tracked.thread.comments = updatedComments;
 				const hasActionable = updatedComments.some(isActionable);
-				tracked.thread.label = hasActionable ? 'Pending comments' : 'All comments processed';
+				tracked.thread.label = hasActionable ? 'Pending comments' : 'All comments seen';
 				if (hasActionable) {
 					const actionableTexts = getActionableTexts(updatedComments, tracked.commentTexts);
 					const updatedData = {
@@ -418,11 +418,11 @@ export function createReviewaCommentController(
 
 			const [uuid, tracked, index] = entry;
 			const updatedComments = [...tracked.thread.comments];
-			updatedComments[index] = { ...comment, label: 'Processed', contextValue: 'processed' };
+			updatedComments[index] = { ...comment, label: 'Seen', contextValue: 'processed' };
 
 			tracked.thread.comments = updatedComments;
 			const hasActionable = updatedComments.some(isActionable);
-			tracked.thread.label = hasActionable ? 'Pending comments' : 'All comments processed';
+			tracked.thread.label = hasActionable ? 'Pending comments' : 'All comments seen';
 
 			if (hasActionable) {
 				const actionableTexts = getActionableTexts(updatedComments, tracked.commentTexts);

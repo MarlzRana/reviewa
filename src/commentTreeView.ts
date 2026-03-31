@@ -91,7 +91,7 @@ class ReviewaTreeDataProvider implements vscode.TreeDataProvider<TreeNode> {
 			item.label = item.label.slice(0, 77) + '...';
 		}
 		const comment = element.tracked.thread.comments[element.index];
-		const isActionable = comment && (comment.label === 'Pending' || comment.label === 'Re-pending');
+		const isActionable = comment && (comment.contextValue === 'pending' || comment.contextValue === 'repending');
 		item.iconPath = new vscode.ThemeIcon(isActionable ? 'comment' : 'pass');
 		item.command = {
 			command: 'vscode.open',
