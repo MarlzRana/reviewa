@@ -232,6 +232,7 @@ export const workspace = {
 
 export const commands = {
 	registerCommand: vi.fn((_command: string, _callback: (...args: unknown[]) => unknown) => ({ dispose: vi.fn() })),
+	executeCommand: vi.fn(),
 };
 
 export const extensions = {

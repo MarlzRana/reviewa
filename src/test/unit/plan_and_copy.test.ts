@@ -265,6 +265,38 @@ describe('createPlanWatcher', () => {
 			expect(unregisterClaudePlanHook).toHaveBeenCalled();
 		});
 	});
+
+	describe('copy nudge', () => {
+		function openClaudePlan() {
+			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
+			vi.mocked(fs.readFileSync).mockReturnValue(
+				JSON.stringify({ cwd: '/test/workspace', abs_path: '/home/user/.claude/plans/plan.md', created_at: '2026-01-01' })
+			);
+			vi.mocked(fs.existsSync).mockReturnValue(true);
+
+			createPlanWatcher(context);
+			const callback = getWatchCallback();
+			callback('rename', 'plan.json');
+		}
+
+		it('shows info message when a Claude plan opens', async () => {
+			openClaudePlan();
+			await new Promise(resolve => setTimeout(resolve, 0));
+
+			expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(
+				expect.stringContaining('copy buttons in the editor title bar')
+			);
+		});
+
+		it('stops showing after 20 opens', async () => {
+			context.globalState.update('claudePlanCopyNudgeCount', 20);
+
+			openClaudePlan();
+			await new Promise(resolve => setTimeout(resolve, 0));
+
+			expect(vscode.window.showWarningMessage).not.toHaveBeenCalled();
+		});
+	});
 });
 
 // =============================================================================

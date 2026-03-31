@@ -161,3 +161,17 @@ I want to make it clear when we are viewing a plan. Let's present the text "Clau
   ## Extra context
   - We are still presenting the Claude Code plan copy icons as colored, because Claude Code cannot automatically injest context on
   plan approve/reject, so we want to be intrusive here
+
+  5.
+  Scrapped:
+For the mono icons would we make them much simpler, let's:
+  - Get rid of the fill
+  - Make the "fake lines" just thin lines/rectangles - not thick ones
+  - The speech bubble, file and clipboard should just be outlines
+
+And let's also use a woff for these icons as well. You will need to create the svgs first and then convert them to woff.
+
+Reminder of your resources (which may give you insight into how to convert svgs to woff, last time you use npx fanastic-<something-i-cant-remember>):
+- VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
+- GitHub Pull Request extension: /Users/marlzrana/gh/Microsoft/vscode-pull-request-github
+

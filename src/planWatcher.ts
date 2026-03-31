@@ -18,7 +18,7 @@ export function createPlanWatcher(context: vscode.ExtensionContext): void {
 		if (claudeActive) {
 			deactivateClaude();
 		}
-		claudeWatcher = activateClaudePlanWatcher();
+		claudeWatcher = activateClaudePlanWatcher(context.globalState);
 		claudeActive = true;
 	}
 

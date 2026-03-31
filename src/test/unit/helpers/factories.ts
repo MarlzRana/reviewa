@@ -47,8 +47,13 @@ export function makeMockThread(overrides?: Partial<vscode.CommentThread>): vscod
 }
 
 export function makeMockExtensionContext(): vscode.ExtensionContext {
+	const store = new Map<string, unknown>();
 	return {
 		subscriptions: [],
+		globalState: {
+			get: (key: string, defaultValue?: unknown) => store.has(key) ? store.get(key) : defaultValue,
+			update: (key: string, value: unknown) => { store.set(key, value); return Promise.resolve(); },
+		},
 	} as unknown as vscode.ExtensionContext;
 }
 

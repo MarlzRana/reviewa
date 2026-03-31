@@ -10,6 +10,9 @@ interface PlanMetadata {
 	created_at: string;
 }
 
+const NUDGE_KEY = 'claudePlanCopyNudgeCount';
+const NUDGE_LIMIT = 20;
+
 function readPlanMetadata(filename: string): PlanMetadata | null {
 	try {
 		const metaPath = path.join(PLAN_METADATA_DIR, filename);
@@ -35,15 +38,23 @@ function isRelevantPlan(filename: string): boolean {
 	return normalizedCwd.startsWith(normalizedWorkspace);
 }
 
-async function openPlanFile(metadata: PlanMetadata): Promise<void> {
+async function openPlanFile(metadata: PlanMetadata, globalState: vscode.Memento): Promise<void> {
 	if (!fs.existsSync(metadata.abs_path)) {
 		return;
 	}
 	const uri = vscode.Uri.file(metadata.abs_path);
 	await vscode.window.showTextDocument(uri, { preview: false });
+
+	const count = globalState.get<number>(NUDGE_KEY, 0);
+	if (count < NUDGE_LIMIT) {
+		globalState.update(NUDGE_KEY, count + 1);
+		vscode.window.showWarningMessage(
+			'Claude Code cannot inject comments on plan approve/reject - only on your next prompt. Use the copy buttons in the editor title bar to manually copy comments before your next message.'
+		);
+	}
 }
 
-export function activateClaudePlanWatcher(): fs.FSWatcher | undefined {
+export function activateClaudePlanWatcher(globalState: vscode.Memento): fs.FSWatcher | undefined {
 	registerClaudePlanHook();
 
 	fs.mkdirSync(PLAN_METADATA_DIR, { recursive: true });
@@ -57,7 +68,7 @@ export function activateClaudePlanWatcher(): fs.FSWatcher | undefined {
 			if (isRelevantPlan(filename)) {
 				const metadata = readPlanMetadata(filename);
 				if (metadata) {
-					openPlanFile(metadata);
+					openPlanFile(metadata, globalState);
 				}
 			}
 		});
