@@ -153,8 +153,15 @@ describe('createFileWatcher', () => {
 		expect(thread.collapsibleState).toBe(CommentThreadCollapsibleState.Collapsed);
 	});
 
-	// Scenario 8: autoCollapseOnCodingAgentConsumption = false (default)
-	it('does not change thread state when autoCollapseOnCodingAgentConsumption is false', () => {
+	// Scenario 8: autoCollapseOnCodingAgentConsumption = false (explicit opt-out)
+	it('does not change thread state when autoCollapseOnCodingAgentConsumption is explicitly false', () => {
+		vi.mocked(vscode.workspace.getConfiguration).mockReturnValue({
+			get: vi.fn((key: string) => {
+				if (key === 'autoCollapseOnCodingAgentConsumption') return false;
+				return undefined;
+			}),
+		} as any);
+
 		createFileWatcher(context, store);
 
 		const thread = makeMockThread({

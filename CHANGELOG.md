@@ -2,6 +2,14 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.15] - 2026-03-31
+
+### Changed
+
+- Auto-collapse on coding agent consumption now defaults to enabled
+- Status bar item click opens the Reviewa comments view
+- Improved plan source display in comments tree view
+
 ## [0.0.14] - 2026-03-31
 
 ### Added

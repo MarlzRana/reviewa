@@ -477,7 +477,7 @@ describe('statusBar', () => {
 	});
 
 	it('sets command to focus comments panel', () => {
-		expect(statusBarItem.command).toBe('workbench.action.focusCommentsPanel');
+		expect(statusBarItem.command).toBe('reviewa.commentTree.focus');
 	});
 
 	it('pushes item to context subscriptions', () => {
