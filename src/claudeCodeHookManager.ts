@@ -110,7 +110,7 @@ const PLAN_HOOK_JS_CONTENT = `#!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
 
-const PLANS_DIR = path.join(require('os').homedir(), '.claude', 'plans');
+const CLAUDE_PLANS_PATTERN = /[\\/]\\.claude[\\/]plans[\\/][^\\/]+\\.md$/;
 const METADATA_DIR = path.join(require('os').homedir(), '.reviewa', 'v1', 'claude', 'plan-metadata');
 
 async function main() {
@@ -121,20 +121,16 @@ async function main() {
 	const input = JSON.parse(Buffer.concat(chunks).toString());
 	const filePath = input.tool_input?.file_path || '';
 
-	if (!filePath.startsWith(PLANS_DIR + path.sep) && !filePath.startsWith(PLANS_DIR + '/')) {
+	if (!CLAUDE_PLANS_PATTERN.test(filePath)) {
 		process.exit(0);
 	}
 
 	const basename = path.basename(filePath);
-	if (!basename.endsWith('.md')) {
-		process.exit(0);
-	}
-
 	const planName = basename.replace(/\\.md$/, '');
 	fs.mkdirSync(METADATA_DIR, { recursive: true });
 	fs.writeFileSync(
 		path.join(METADATA_DIR, planName + '.json'),
-		JSON.stringify({ cwd: input.cwd, created_at: new Date().toISOString() })
+		JSON.stringify({ cwd: input.cwd, abs_path: filePath, created_at: new Date().toISOString() })
 	);
 }
 
@@ -142,17 +138,34 @@ main().catch(() => process.exit(0));
 `;
 
 const PLAN_HOOK_SH_CONTENT = `#!/bin/bash
-exec node "$HOME/.reviewa/v1/claude/hooks/pre_tool_use_plan_hook.js"
+exec node "$HOME/.reviewa/v1/claude/hooks/post_tool_use_plan_hook.js"
 `;
 
 export function installClaudeCodePlanHookScript(): void {
 	fs.mkdirSync(CLAUDE_HOOKS_DIR, { recursive: true });
 
-	const hookJsPath = path.join(CLAUDE_HOOKS_DIR, 'pre_tool_use_plan_hook.js');
+	const hookJsPath = path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.js');
 	fs.writeFileSync(hookJsPath, PLAN_HOOK_JS_CONTENT, { mode: 0o755 });
 
-	const hookShPath = path.join(CLAUDE_HOOKS_DIR, 'pre_tool_use_plan_hook.sh');
+	const hookShPath = path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh');
 	fs.writeFileSync(hookShPath, PLAN_HOOK_SH_CONTENT, { mode: 0o755 });
+}
+
+function isReviewaPlanHookEntry(entry: unknown): boolean {
+	if (typeof entry !== 'object' || entry === null) {
+		return false;
+	}
+	const innerHooks = (entry as Record<string, unknown>).hooks;
+	if (!Array.isArray(innerHooks)) {
+		return false;
+	}
+	return innerHooks.some((h: unknown) => {
+		if (typeof h !== 'object' || h === null) {
+			return false;
+		}
+		const cmd = (h as Record<string, unknown>).command;
+		return typeof cmd === 'string' && cmd.includes('reviewa');
+	});
 }
 
 export function registerClaudeCodePlanHook(): void {
@@ -174,37 +187,33 @@ export function registerClaudeCodePlanHook(): void {
 
 	const hooks = settings.hooks as Record<string, unknown[]>;
 
-	if (!Array.isArray(hooks.PreToolUse)) {
-		hooks.PreToolUse = [];
+	// Reviewa previously registered under PreToolUse — remove any leftover entries
+	if (Array.isArray(hooks.PreToolUse)) {
+		const filtered = hooks.PreToolUse.filter(entry => !isReviewaPlanHookEntry(entry));
+		if (filtered.length !== hooks.PreToolUse.length) {
+			if (filtered.length === 0) {
+				delete hooks.PreToolUse;
+			} else {
+				hooks.PreToolUse = filtered;
+			}
+			fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+		}
 	}
 
-	const alreadyRegistered = hooks.PreToolUse.some((entry: unknown) => {
-		if (typeof entry !== 'object' || entry === null) {
-			return false;
-		}
-		const innerHooks = (entry as Record<string, unknown>).hooks;
-		if (!Array.isArray(innerHooks)) {
-			return false;
-		}
-		return innerHooks.some((h: unknown) => {
-			if (typeof h !== 'object' || h === null) {
-				return false;
-			}
-			const cmd = (h as Record<string, unknown>).command;
-			return typeof cmd === 'string' && cmd.includes('reviewa');
-		});
-	});
+	if (!Array.isArray(hooks.PostToolUse)) {
+		hooks.PostToolUse = [];
+	}
 
-	if (alreadyRegistered) {
+	if (hooks.PostToolUse.some(isReviewaPlanHookEntry)) {
 		return;
 	}
 
-	hooks.PreToolUse.push({
+	hooks.PostToolUse.push({
 		matcher: 'Write',
 		hooks: [
 			{
 				type: 'command',
-				command: `bash ${path.join(CLAUDE_HOOKS_DIR, 'pre_tool_use_plan_hook.sh')}`,
+				command: `bash ${path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh')}`,
 				timeout: 10,
 			},
 		],
@@ -229,29 +238,14 @@ export function unregisterClaudeCodePlanHook(): void {
 
 	const hooks = settings.hooks as Record<string, unknown[]>;
 
-	if (!Array.isArray(hooks.PreToolUse)) {
+	if (!Array.isArray(hooks.PostToolUse)) {
 		return;
 	}
 
-	hooks.PreToolUse = hooks.PreToolUse.filter((entry: unknown) => {
-		if (typeof entry !== 'object' || entry === null) {
-			return true;
-		}
-		const innerHooks = (entry as Record<string, unknown>).hooks;
-		if (!Array.isArray(innerHooks)) {
-			return true;
-		}
-		return !innerHooks.some((h: unknown) => {
-			if (typeof h !== 'object' || h === null) {
-				return false;
-			}
-			const cmd = (h as Record<string, unknown>).command;
-			return typeof cmd === 'string' && cmd.includes('reviewa');
-		});
-	});
+	hooks.PostToolUse = hooks.PostToolUse.filter(entry => !isReviewaPlanHookEntry(entry));
 
-	if (hooks.PreToolUse.length === 0) {
-		delete hooks.PreToolUse;
+	if (hooks.PostToolUse.length === 0) {
+		delete hooks.PostToolUse;
 	}
 
 	fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));

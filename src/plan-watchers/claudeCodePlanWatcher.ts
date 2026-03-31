@@ -1,25 +1,26 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { CLAUDE_PLANS_DIR, PLAN_METADATA_DIR } from '../types';
+import { PLAN_METADATA_DIR } from '../types';
 import { registerClaudePlanHook, unregisterClaudePlanHook } from '../hookManager';
 
 interface PlanMetadata {
 	cwd: string;
+	abs_path: string;
 	created_at: string;
 }
 
-function readPlanMetadata(planName: string): PlanMetadata | null {
+function readPlanMetadata(filename: string): PlanMetadata | null {
 	try {
-		const metaPath = path.join(PLAN_METADATA_DIR, `${planName}.json`);
+		const metaPath = path.join(PLAN_METADATA_DIR, filename);
 		return JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
 	} catch {
 		return null;
 	}
 }
 
-function isRelevantPlan(planName: string): boolean {
-	const metadata = readPlanMetadata(planName);
+function isRelevantPlan(filename: string): boolean {
+	const metadata = readPlanMetadata(filename);
 	if (!metadata?.cwd) {
 		return false;
 	}
@@ -34,30 +35,30 @@ function isRelevantPlan(planName: string): boolean {
 	return normalizedCwd.startsWith(normalizedWorkspace);
 }
 
-async function openPlanFile(planName: string): Promise<void> {
-	const filePath = path.join(CLAUDE_PLANS_DIR, `${planName}.md`);
-	if (!fs.existsSync(filePath)) {
+async function openPlanFile(metadata: PlanMetadata): Promise<void> {
+	if (!fs.existsSync(metadata.abs_path)) {
 		return;
 	}
-	const uri = vscode.Uri.file(filePath);
+	const uri = vscode.Uri.file(metadata.abs_path);
 	await vscode.window.showTextDocument(uri, { preview: false });
 }
 
 export function activateClaudePlanWatcher(): fs.FSWatcher | undefined {
 	registerClaudePlanHook();
 
-	fs.mkdirSync(CLAUDE_PLANS_DIR, { recursive: true });
 	fs.mkdirSync(PLAN_METADATA_DIR, { recursive: true });
 
 	try {
-		return fs.watch(CLAUDE_PLANS_DIR, (_eventType, filename) => {
-			if (!filename?.endsWith('.md')) {
+		return fs.watch(PLAN_METADATA_DIR, (_eventType, filename) => {
+			if (!filename?.endsWith('.json')) {
 				return;
 			}
 
-			const planName = filename.replace(/\.md$/, '');
-			if (isRelevantPlan(planName)) {
-				openPlanFile(planName);
+			if (isRelevantPlan(filename)) {
+				const metadata = readPlanMetadata(filename);
+				if (metadata) {
+					openPlanFile(metadata);
+				}
 			}
 		});
 	} catch {

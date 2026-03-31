@@ -104,8 +104,8 @@ describe('Script Installation', () => {
 
 			expect(mockedFs.mkdirSync).toHaveBeenCalledWith(CLAUDE_HOOKS_DIR, { recursive: true });
 
-			const hookJsPath = path.join(CLAUDE_HOOKS_DIR, 'pre_tool_use_plan_hook.js');
-			const hookShPath = path.join(CLAUDE_HOOKS_DIR, 'pre_tool_use_plan_hook.sh');
+			const hookJsPath = path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.js');
+			const hookShPath = path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh');
 
 			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookJsPath, expect.stringContaining('#!/usr/bin/env node'), { mode: 0o755 });
 			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookShPath, expect.stringContaining('#!/bin/bash'), { mode: 0o755 });
@@ -240,24 +240,24 @@ describe('registerClaudeCodeHook', () => {
 describe('registerClaudeCodePlanHook', () => {
 	const settingsPath = path.join(HOME, '.claude', 'settings.json');
 
-	it('adds PreToolUse hook with Write matcher', () => {
+	it('adds PostToolUse hook with Write matcher', () => {
 		mockedFs.readFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
 
 		registerClaudeCodePlanHook();
 
 		const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
-		expect(written.hooks.PreToolUse).toHaveLength(1);
-		expect(written.hooks.PreToolUse[0].matcher).toBe('Write');
-		expect(written.hooks.PreToolUse[0].hooks[0].command).toContain('reviewa');
-		expect(written.hooks.PreToolUse[0].hooks[0].command).toContain('pre_tool_use_plan_hook.sh');
+		expect(written.hooks.PostToolUse).toHaveLength(1);
+		expect(written.hooks.PostToolUse[0].matcher).toBe('Write');
+		expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('reviewa');
+		expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('post_tool_use_plan_hook.sh');
 	});
 
 	it('is idempotent - does not add duplicate', () => {
 		const existing = {
 			hooks: {
-				PreToolUse: [{
+				PostToolUse: [{
 					matcher: 'Write',
-					hooks: [{ type: 'command', command: `bash ${path.join(CLAUDE_HOOKS_DIR, 'pre_tool_use_plan_hook.sh')}` }]
+					hooks: [{ type: 'command', command: `bash ${path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh')}` }]
 				}]
 			}
 		};
@@ -267,17 +267,40 @@ describe('registerClaudeCodePlanHook', () => {
 
 		expect(mockedFs.writeFileSync).not.toHaveBeenCalled();
 	});
+
+	it('migrates legacy PreToolUse reviewa hook to PostToolUse', () => {
+		const existing = {
+			hooks: {
+				PreToolUse: [
+					{ matcher: 'Write', hooks: [{ type: 'command', command: `bash ${path.join(CLAUDE_HOOKS_DIR, 'pre_tool_use_plan_hook.sh')}` }] },
+					{ hooks: [{ type: 'command', command: 'other-tool' }] }
+				]
+			}
+		};
+		mockedFs.readFileSync.mockReturnValue(JSON.stringify(existing));
+
+		registerClaudeCodePlanHook();
+
+		// First write: legacy cleanup
+		const afterCleanup = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
+		expect(afterCleanup.hooks.PreToolUse).toHaveLength(1);
+		expect(afterCleanup.hooks.PreToolUse[0].hooks[0].command).toBe('other-tool');
+		// Second write: PostToolUse registration
+		const final = JSON.parse(String(mockedFs.writeFileSync.mock.calls[1][1]));
+		expect(final.hooks.PostToolUse).toHaveLength(1);
+		expect(final.hooks.PostToolUse[0].hooks[0].command).toContain('post_tool_use_plan_hook.sh');
+	});
 });
 
 describe('unregisterClaudeCodePlanHook', () => {
 	const settingsPath = path.join(HOME, '.claude', 'settings.json');
 
-	it('removes reviewa entries from PreToolUse', () => {
+	it('removes reviewa entries from PostToolUse', () => {
 		const existing = {
 			hooks: {
-				PreToolUse: [
+				PostToolUse: [
 					{ hooks: [{ type: 'command', command: 'other-tool' }] },
-					{ matcher: 'Write', hooks: [{ type: 'command', command: `bash ${path.join(CLAUDE_HOOKS_DIR, 'pre_tool_use_plan_hook.sh')}` }] },
+					{ matcher: 'Write', hooks: [{ type: 'command', command: `bash ${path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh')}` }] },
 				]
 			}
 		};
@@ -286,15 +309,15 @@ describe('unregisterClaudeCodePlanHook', () => {
 		unregisterClaudeCodePlanHook();
 
 		const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
-		expect(written.hooks.PreToolUse).toHaveLength(1);
-		expect(written.hooks.PreToolUse[0].hooks[0].command).toBe('other-tool');
+		expect(written.hooks.PostToolUse).toHaveLength(1);
+		expect(written.hooks.PostToolUse[0].hooks[0].command).toBe('other-tool');
 	});
 
-	it('deletes PreToolUse array if it becomes empty', () => {
+	it('deletes PostToolUse array if it becomes empty', () => {
 		const existing = {
 			hooks: {
-				PreToolUse: [
-					{ matcher: 'Write', hooks: [{ type: 'command', command: `bash ${path.join(CLAUDE_HOOKS_DIR, 'pre_tool_use_plan_hook.sh')}` }] },
+				PostToolUse: [
+					{ matcher: 'Write', hooks: [{ type: 'command', command: `bash ${path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh')}` }] },
 				]
 			}
 		};
@@ -303,7 +326,7 @@ describe('unregisterClaudeCodePlanHook', () => {
 		unregisterClaudeCodePlanHook();
 
 		const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
-		expect(written.hooks.PreToolUse).toBeUndefined();
+		expect(written.hooks.PostToolUse).toBeUndefined();
 	});
 
 	it('returns early if settings file does not exist', () => {
@@ -322,7 +345,7 @@ describe('unregisterClaudeCodePlanHook', () => {
 		expect(mockedFs.writeFileSync).not.toHaveBeenCalled();
 	});
 
-	it('returns early if no PreToolUse array', () => {
+	it('returns early if no PostToolUse array', () => {
 		mockedFs.readFileSync.mockReturnValue(JSON.stringify({ hooks: {} }));
 
 		unregisterClaudeCodePlanHook();
@@ -708,10 +731,10 @@ describe('hookManager orchestrator', () => {
 			);
 			// Plan hook files
 			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(CLAUDE_HOOKS_DIR, 'pre_tool_use_plan_hook.js'), expect.any(String), { mode: 0o755 }
+				path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.js'), expect.any(String), { mode: 0o755 }
 			);
 			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(CLAUDE_HOOKS_DIR, 'pre_tool_use_plan_hook.sh'), expect.any(String), { mode: 0o755 }
+				path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh'), expect.any(String), { mode: 0o755 }
 			);
 			// Codex hook.py
 			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
@@ -790,7 +813,7 @@ describe('hookManager orchestrator', () => {
 			const settingsCall = writeCalls.find(c => String(c[0]).includes('.claude'));
 			expect(settingsCall).toBeDefined();
 			const written = JSON.parse(String(settingsCall![1]));
-			expect(written.hooks.PreToolUse).toBeDefined();
+			expect(written.hooks.PostToolUse).toBeDefined();
 		});
 
 		it('does not register plan hook if Claude Code is not detected', () => {
@@ -807,8 +830,8 @@ describe('hookManager orchestrator', () => {
 			mockedExecSync.mockImplementation(() => { throw new Error('not found'); });
 			const existing = {
 				hooks: {
-					PreToolUse: [
-						{ matcher: 'Write', hooks: [{ type: 'command', command: `bash ${path.join(CLAUDE_HOOKS_DIR, 'pre_tool_use_plan_hook.sh')}` }] },
+					PostToolUse: [
+						{ matcher: 'Write', hooks: [{ type: 'command', command: `bash ${path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh')}` }] },
 					]
 				}
 			};
@@ -818,7 +841,7 @@ describe('hookManager orchestrator', () => {
 
 			expect(mockedFs.writeFileSync).toHaveBeenCalled();
 			const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
-			expect(written.hooks.PreToolUse).toBeUndefined();
+			expect(written.hooks.PostToolUse).toBeUndefined();
 		});
 	});
 

@@ -81,3 +81,18 @@ I want to now implement support for Gemini plans, in the same we do for Claude p
 
 ## Guidance
 Use the AskUserQuestion tool if anything in unclear/ambigious 
+
+3. 
+## Mission
+I want to support showing plans related to a given workspace in the sidebar, but at the moment the file watcher for the Claude Code is looking at the generic plan directory ~/.claude/plans, and that doesn't provide me the metadata to see what cwd a plan is associated with. I want to the claude code plan watcher, to instead watch the plan-metadata directory instead (like the Gemini CLI), and then post that change I should be able to present plans against a workspace, and also listen using the same file watcher for new relevant plans and present them in the sidebar. I know I can do it given the existing implementation, but I want to align the way the plan watchers work across the different coding agents.
+
+## High level implementation:
+- We need to change the PreToolUse hook to a PostToolUse one, see what a hook deprecation looks like by looking at the Gemini hooks where we deprecated the BeforeAgent hook for a BeforeModel one
+- The claudeCodePlanWatcher should now be listening on plan-metadata instead, looking for relevant matches, and if it finds one it uses the cwd in the plan metadata to open the plan 
+
+## Resources
+- VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
+- Claude Code documentation: /Users/marlzrana/gh/ericbuess/claude-code-docs
+
+## Guidance
+Use the AskUserQuestion tool if anything in unclear/ambigious 

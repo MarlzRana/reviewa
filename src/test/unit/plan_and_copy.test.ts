@@ -80,8 +80,7 @@ describe('createPlanWatcher', () => {
 			createPlanWatcher(context);
 
 			expect(registerClaudePlanHook).toHaveBeenCalledTimes(1);
-			expect(fs.watch).toHaveBeenCalledWith(CLAUDE_PLANS_DIR, expect.any(Function));
-			expect(fs.mkdirSync).toHaveBeenCalledWith(CLAUDE_PLANS_DIR, { recursive: true });
+			expect(fs.watch).toHaveBeenCalledWith(PLAN_METADATA_DIR, expect.any(Function));
 			expect(fs.mkdirSync).toHaveBeenCalledWith(PLAN_METADATA_DIR, { recursive: true });
 		});
 	});
@@ -142,27 +141,27 @@ describe('createPlanWatcher', () => {
 	});
 
 	describe('file events', () => {
-		it('opens relevant .md plan files', () => {
+		it('opens relevant plan files via metadata', () => {
 			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			vi.mocked(fs.readFileSync).mockReturnValue(
-				JSON.stringify({ cwd: '/test/workspace', created_at: '2026-01-01' })
+				JSON.stringify({ cwd: '/test/workspace', abs_path: '/home/user/.claude/plans/my-plan.md', created_at: '2026-01-01' })
 			);
 			vi.mocked(fs.existsSync).mockReturnValue(true);
 
 			createPlanWatcher(context);
 			const callback = getWatchCallback();
 
-			callback('rename', 'my-plan.md');
+			callback('rename', 'my-plan.json');
 
 			expect(vscode.window.showTextDocument).toHaveBeenCalled();
 		});
 
-		it('ignores non-.md files', () => {
+		it('ignores non-.json files', () => {
 			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			createPlanWatcher(context);
 			const callback = getWatchCallback();
 
-			callback('rename', 'my-plan.json');
+			callback('rename', 'my-plan.md');
 			callback('rename', 'my-plan.txt');
 			callback('rename', null);
 
@@ -172,19 +171,21 @@ describe('createPlanWatcher', () => {
 		it('does not open plan when not relevant to workspace', () => {
 			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			vi.mocked(fs.readFileSync).mockReturnValue(
-				JSON.stringify({ cwd: '/other/project', created_at: '2026-01-01' })
+				JSON.stringify({ cwd: '/other/project', abs_path: '/home/user/.claude/plans/other-plan.md', created_at: '2026-01-01' })
 			);
 
 			createPlanWatcher(context);
 			const callback = getWatchCallback();
 
-			callback('rename', 'other-plan.md');
+			callback('rename', 'other-plan.json');
 
 			expect(vscode.window.showTextDocument).not.toHaveBeenCalled();
 		});
 	});
 
-	describe('isRelevantPlan (via file event)', () => {
+	describe('isRelevantPlan (via metadata event)', () => {
+		const planAbsPath = '/home/user/.claude/plans/test-plan.md';
+
 		function setupAndTrigger(metadata: object | null) {
 			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
 			if (metadata) {
@@ -196,21 +197,21 @@ describe('createPlanWatcher', () => {
 
 			createPlanWatcher(context);
 			const callback = getWatchCallback();
-			callback('rename', 'test-plan.md');
+			callback('rename', 'test-plan.json');
 		}
 
 		it('returns true when cwd starts with workspace path', () => {
-			setupAndTrigger({ cwd: '/test/workspace/subdir', created_at: '2026-01-01' });
+			setupAndTrigger({ cwd: '/test/workspace/subdir', abs_path: planAbsPath, created_at: '2026-01-01' });
 			expect(vscode.window.showTextDocument).toHaveBeenCalled();
 		});
 
 		it('returns true when cwd exactly matches workspace path', () => {
-			setupAndTrigger({ cwd: '/test/workspace', created_at: '2026-01-01' });
+			setupAndTrigger({ cwd: '/test/workspace', abs_path: planAbsPath, created_at: '2026-01-01' });
 			expect(vscode.window.showTextDocument).toHaveBeenCalled();
 		});
 
 		it('handles trailing slashes on cwd', () => {
-			setupAndTrigger({ cwd: '/test/workspace/', created_at: '2026-01-01' });
+			setupAndTrigger({ cwd: '/test/workspace/', abs_path: planAbsPath, created_at: '2026-01-01' });
 			expect(vscode.window.showTextDocument).toHaveBeenCalled();
 		});
 
@@ -218,12 +219,12 @@ describe('createPlanWatcher', () => {
 			vscode.workspace.workspaceFolders = [
 				{ uri: vscode.Uri.file('/test/workspace/'), name: 'workspace', index: 0 },
 			];
-			setupAndTrigger({ cwd: '/test/workspace', created_at: '2026-01-01' });
+			setupAndTrigger({ cwd: '/test/workspace', abs_path: planAbsPath, created_at: '2026-01-01' });
 			expect(vscode.window.showTextDocument).toHaveBeenCalled();
 		});
 
 		it('returns false for different workspace', () => {
-			setupAndTrigger({ cwd: '/different/workspace', created_at: '2026-01-01' });
+			setupAndTrigger({ cwd: '/different/workspace', abs_path: planAbsPath, created_at: '2026-01-01' });
 			expect(vscode.window.showTextDocument).not.toHaveBeenCalled();
 		});
 
@@ -233,13 +234,13 @@ describe('createPlanWatcher', () => {
 		});
 
 		it('returns false when metadata has no cwd', () => {
-			setupAndTrigger({ created_at: '2026-01-01' });
+			setupAndTrigger({ abs_path: planAbsPath, created_at: '2026-01-01' });
 			expect(vscode.window.showTextDocument).not.toHaveBeenCalled();
 		});
 
 		it('returns false when no workspace folder', () => {
 			vscode.workspace.workspaceFolders = undefined;
-			setupAndTrigger({ cwd: '/test/workspace', created_at: '2026-01-01' });
+			setupAndTrigger({ cwd: '/test/workspace', abs_path: planAbsPath, created_at: '2026-01-01' });
 			expect(vscode.window.showTextDocument).not.toHaveBeenCalled();
 		});
 	});
