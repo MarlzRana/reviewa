@@ -2,6 +2,18 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.14] - 2026-03-31
+
+### Added
+
+- Plans tree view — new panel in the Reviewa sidebar showing Claude Code and Gemini CLI plans grouped by source, with session-detected plans highlighted by a sparkle icon
+- Plan store and shared plan utilities — in-memory plan entry management with workspace relevance filtering
+
+### Changed
+
+- Shortened plan headers in plan tree view for cleaner display
+- Refactored plan watchers to use shared plan utilities and plan store
+
 ## [0.0.13] - 2026-03-31
 
 ### Changed
