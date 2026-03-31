@@ -95,13 +95,23 @@
       {
         "command": "reviewa.copyFileComments",
         "title": "Copy All Pending Comments in Current File",
+        "icon": "images/copy_plan_comments_mono.svg"
+      },
+      {
+        "command": "reviewa.copyAllPendingComments",
+        "title": "Copy All Pending Comments to Clipboard",
+        "icon": "images/copy_all_comments_mono.svg"
+      },
+      {
+        "command": "reviewa.copyFileCommentsClaudeCode",
+        "title": "Copy All Pending Comments in Current File",
         "icon": {
           "light": "images/copy_plan_comments_light.svg",
           "dark": "images/copy_plan_comments_dark.svg"
         }
       },
       {
-        "command": "reviewa.copyAllPendingComments",
+        "command": "reviewa.copyAllPendingCommentsClaudeCode",
         "title": "Copy All Pending Comments to Clipboard",
         "icon": {
           "light": "images/copy_all_comments_light.svg",
@@ -156,6 +166,14 @@
           "when": "false"
         },
         {
+          "command": "reviewa.copyFileCommentsClaudeCode",
+          "when": "false"
+        },
+        {
+          "command": "reviewa.copyAllPendingCommentsClaudeCode",
+          "when": "false"
+        },
+        {
           "command": "reviewa.claudeCodePlanLabel",
           "when": "false"
         },
@@ -178,14 +196,24 @@
           "enablement": "false"
         },
         {
+          "command": "reviewa.copyFileCommentsClaudeCode",
+          "group": "navigation",
+          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/"
+        },
+        {
+          "command": "reviewa.copyAllPendingCommentsClaudeCode",
+          "group": "navigation",
+          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/"
+        },
+        {
           "command": "reviewa.copyFileComments",
           "group": "navigation",
-          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/ || resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/"
+          "when": "resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/"
         },
         {
           "command": "reviewa.copyAllPendingComments",
           "group": "navigation",
-          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/ || resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/"
+          "when": "resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/"
         },
         {
           "command": "reviewa.copyFileComments",

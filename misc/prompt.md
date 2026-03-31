@@ -126,3 +126,38 @@ I want to make it clear when we are viewing a plan. Let's present the text "Clau
 
 ## Resources
 - VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
+
+6.
+## Mission
+  The "copy all pending comments" and "copy comments pending comments in file" are currently obtrusive with their color. I want to
+  offer a variant that is mono and is used when they are not needed/optional (like glasses_mono.svg).
+
+  ## Expectation
+  - For Claude Code Plan views, the icons are still colored
+  - For Gemini Code Plan views, the icons are the mono version
+  - For general file/diff views, the icons are the mono version
+
+  ## Resources
+  - VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
+
+  ## Guidance
+  - Use the AskUserQuestion tool if anything in unclear/ambigious
+  - It is probably easiest to introduce a new e.g. reviewa.copyFileCommentsClaudeCode and reviewa.copyAllPendingCommentsClaudeCode
+  command with custom icons, and hooked up to same handlers
+  - And hopefully when Claude Code bins it we can move Claude plans back to general commands:
+  ```
+{
+          "command": "reviewa.copyFileComments",
+          "group": "navigation",
+          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/ || resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/"
+        },
+        {
+          "command": "reviewa.copyAllPendingComments",
+          "group": "navigation",
+          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/ || resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/"
+        }
+  ```
+
+  ## Extra context
+  - We are still presenting the Claude Code plan copy icons as colored, because Claude Code cannot automatically injest context on
+  plan approve/reject, so we want to be intrusive here

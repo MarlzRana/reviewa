@@ -68,5 +68,7 @@ export function registerCopyCommands(context: vscode.ExtensionContext, store: Co
 	context.subscriptions.push(
 		vscode.commands.registerCommand('reviewa.copyFileComments', (uri?: vscode.Uri) => copyFileComments(store, uri)),
 		vscode.commands.registerCommand('reviewa.copyAllPendingComments', () => copyAllPendingComments(store)),
+		vscode.commands.registerCommand('reviewa.copyFileCommentsClaudeCode', (uri?: vscode.Uri) => copyFileComments(store, uri)),
+		vscode.commands.registerCommand('reviewa.copyAllPendingCommentsClaudeCode', () => copyAllPendingComments(store)),
 	);
 }
