@@ -2,6 +2,14 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.16] - 2026-03-31
+
+### Changed
+
+- Renamed "Processed" label to "Seen" on consumed comments for clarity
+- Decoupled comment state logic from label text — state is now tracked independently
+- Made initial comment placeholder strings generic across all supported agents
+
 ## [0.0.15] - 2026-03-31
 
 ### Changed
