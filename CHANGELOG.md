@@ -2,6 +2,12 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.17] - 2026-03-31
+
+### Added
+
+- Comment status filter in the comments tree view — toggle Pending and Seen comments on/off via title bar buttons
+
 ## [0.0.16] - 2026-03-31
 
 ### Changed
