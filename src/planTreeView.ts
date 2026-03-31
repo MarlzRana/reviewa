@@ -15,8 +15,8 @@ class PlanItemNode {
 type PlanTreeNode = GroupHeaderNode | PlanItemNode;
 
 const GROUP_LABELS: Record<PlanSource, string> = {
-	claude: 'Claude Code Plans',
-	gemini: 'Gemini CLI Plans',
+	claude: 'Claude Code',
+	gemini: 'Gemini CLI',
 };
 
 const GROUP_ORDER: PlanSource[] = ['claude', 'gemini'];
