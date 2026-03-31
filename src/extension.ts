@@ -1,3 +1,4 @@
+import * as os from 'os';
 import * as vscode from 'vscode';
 import { CommentStore } from './commentStore';
 import { createReviewaCommentController } from './commentController';
@@ -11,6 +12,10 @@ import { registerCopyCommands } from './copy_comments';
 let store: CommentStore;
 
 export function activate(context: vscode.ExtensionContext) {
+	if (os.platform() === 'win32') {
+		vscode.window.showErrorMessage('Reviewa is not supported on Windows.');
+		return;
+	}
 	CommentStore.ensureDirectoryExists();
 	installHookScripts();
 	registerHooks();

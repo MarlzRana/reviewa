@@ -46,3 +46,7 @@ Lines are prefixed with `+` for additions, `-` for removals, or no prefix for no
 ## Known Issues
 
 - In inline diff mode, comments cannot be placed on removed lines (VS Code limitation — the removed lines are visual overlays, not addressable document ranges). Use split diff view to comment on removals.
+- Claude Code comments cannot be automatically injected on plan reject/approval — only on the next user prompt. Use the provided copy buttons to manually paste comments into the plan response if needed.
+- Codex plan review is not supported — Codex does not use a file for plans, so there is no plan to watch or comment on.
+- Copilot CLI is not yet supported — it does not support global hooks.
+- Windows is not supported — hook scripts use shell wrappers and Unix-style paths.
