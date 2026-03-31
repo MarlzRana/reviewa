@@ -2,6 +2,19 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.12] - 2026-03-31
+
+### Added
+
+- Plan type labels in editor title bar — "Claude Code Plan" and "Gemini CLI Plan" labels display when viewing plan files
+- Warning nudge when Claude Code plans open — reminds users to manually copy comments before approving/rejecting plans (auto-dismisses after 20 views)
+
+### Changed
+
+- Copy comment buttons use non-obtrusive mono icons for non-plan files; Claude Code plan files retain themed icons
+- Copy file comments command title clarified to "Copy All Pending Comments in Current File"
+- Setting renamed from `copyCommentsEditorTitleBarItems` to `copyAllPendingCommentsInFile`
+
 ## [0.0.11] - 2026-03-31
 
 ### Added
