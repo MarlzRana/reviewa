@@ -289,7 +289,7 @@ describe('createPlanWatcher', () => {
 		});
 
 		it('stops showing after 20 opens', async () => {
-			context.globalState.update('claudePlanCopyNudgeCount', 20);
+			context.globalState.update('claudePlanCopyNudgeCount', 10);
 
 			openClaudePlan();
 			await new Promise(resolve => setTimeout(resolve, 0));

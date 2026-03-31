@@ -11,7 +11,7 @@ interface PlanMetadata {
 }
 
 const NUDGE_KEY = 'claudePlanCopyNudgeCount';
-const NUDGE_LIMIT = 20;
+const NUDGE_LIMIT = 10;
 
 function readPlanMetadata(filename: string): PlanMetadata | null {
 	try {
