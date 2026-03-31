@@ -1,5 +1,19 @@
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { CommentStore, TrackedComment } from './commentStore';
+import { CLAUDE_PLANS_DIR } from './types';
+
+const GEMINI_PLANS_PATTERN = /[\\/]\.gemini[\\/]tmp[\\/][^\\/]+[\\/][^\\/]+[\\/]plans[\\/]/;
+
+function getPlanSource(absPath: string): string | null {
+	if (absPath.startsWith(CLAUDE_PLANS_DIR)) {
+		return 'Claude Code plan';
+	}
+	if (GEMINI_PLANS_PATTERN.test(absPath)) {
+		return 'Gemini CLI plan';
+	}
+	return null;
+}
 
 class FileNode {
 	constructor(
@@ -34,11 +48,16 @@ class ReviewaTreeDataProvider implements vscode.TreeDataProvider<TreeNode> {
 
 	getTreeItem(element: TreeNode): vscode.TreeItem {
 		if (element instanceof FileNode) {
-			const relativePath = vscode.workspace.asRelativePath(element.absPath);
-			const item = new vscode.TreeItem(relativePath, vscode.TreeItemCollapsibleState.Expanded);
+			const planSource = getPlanSource(element.absPath);
+			const label = planSource
+				? path.basename(element.absPath)
+				: vscode.workspace.asRelativePath(element.absPath);
+			const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.Expanded);
 			item.resourceUri = vscode.Uri.file(element.absPath);
 			item.iconPath = vscode.ThemeIcon.File;
-			item.description = `${element.threads.length}`;
+			item.description = planSource
+				? `${planSource}  ${element.threads.length}`
+				: `${element.threads.length}`;
 			return item;
 		}
 
