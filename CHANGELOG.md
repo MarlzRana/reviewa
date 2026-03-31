@@ -2,6 +2,17 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.11] - 2026-03-31
+
+### Added
+
+- General coding agent support — copy comment buttons now appear in the editor title bar for all files, enabling manual paste into any coding agent
+- `reviewa.copyCommentsEditorTitleBarItems` setting to toggle copy comment buttons in the editor title bar
+
+### Changed
+
+- Renamed `copyPlanComments` command to `copyFileComments` — now works for any file, not just plan files
+
 ## [0.0.10] - 2026-03-31
 
 ### Changed
