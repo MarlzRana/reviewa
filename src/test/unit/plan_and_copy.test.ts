@@ -36,6 +36,7 @@ vi.mock('../../hookManager', () => ({
 import * as fs from 'fs';
 import { registerClaudePlanHook, unregisterClaudePlanHook, registerGeminiPlanHook, unregisterGeminiPlanHook } from '../../hookManager';
 import { createPlanWatcher } from '../../planWatcher';
+import { PlanStore } from '../../planStore';
 import { registerCopyCommands } from '../../copy_comments';
 import { CommentStore } from '../../commentStore';
 
@@ -69,7 +70,7 @@ describe('createPlanWatcher', () => {
 	describe('initial config', () => {
 		it('does not create watcher or register hooks when config disabled', () => {
 			__setConfigValues({});
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 
 			expect(registerClaudePlanHook).not.toHaveBeenCalled();
 			expect(fs.watch).not.toHaveBeenCalled();
@@ -77,7 +78,7 @@ describe('createPlanWatcher', () => {
 
 		it('creates watcher and registers hooks when config enabled', () => {
 			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 
 			expect(registerClaudePlanHook).toHaveBeenCalledTimes(1);
 			expect(fs.watch).toHaveBeenCalledWith(PLAN_METADATA_DIR, expect.any(Function));
@@ -95,7 +96,7 @@ describe('createPlanWatcher', () => {
 				return { dispose: vi.fn() };
 			});
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			expect(registerClaudePlanHook).not.toHaveBeenCalled();
 
 			// Now change config to enabled
@@ -114,7 +115,7 @@ describe('createPlanWatcher', () => {
 				return { dispose: vi.fn() };
 			});
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			const watcherClose = vi.mocked(fs.watch).mock.results[0].value.close;
 
 			// Disable
@@ -133,7 +134,7 @@ describe('createPlanWatcher', () => {
 				return { dispose: vi.fn() };
 			});
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			configChangeListener({ affectsConfiguration: (s: string) => s === 'editor.fontSize' });
 
 			expect(registerClaudePlanHook).not.toHaveBeenCalled();
@@ -148,7 +149,7 @@ describe('createPlanWatcher', () => {
 			);
 			vi.mocked(fs.existsSync).mockReturnValue(true);
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			const callback = getWatchCallback();
 
 			callback('rename', 'my-plan.json');
@@ -158,7 +159,7 @@ describe('createPlanWatcher', () => {
 
 		it('ignores non-.json files', () => {
 			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			const callback = getWatchCallback();
 
 			callback('rename', 'my-plan.md');
@@ -174,7 +175,7 @@ describe('createPlanWatcher', () => {
 				JSON.stringify({ cwd: '/other/project', abs_path: '/home/user/.claude/plans/other-plan.md', created_at: '2026-01-01' })
 			);
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			const callback = getWatchCallback();
 
 			callback('rename', 'other-plan.json');
@@ -195,7 +196,7 @@ describe('createPlanWatcher', () => {
 			}
 			vi.mocked(fs.existsSync).mockReturnValue(true);
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			const callback = getWatchCallback();
 			callback('rename', 'test-plan.json');
 		}
@@ -254,7 +255,7 @@ describe('createPlanWatcher', () => {
 				return { dispose: vi.fn() };
 			});
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			const watcherClose = vi.mocked(fs.watch).mock.results[0].value.close;
 
 			// Find the dispose subscription (last one pushed)
@@ -274,7 +275,7 @@ describe('createPlanWatcher', () => {
 			);
 			vi.mocked(fs.existsSync).mockReturnValue(true);
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			const callback = getWatchCallback();
 			callback('rename', 'plan.json');
 		}
@@ -315,14 +316,14 @@ describe('createPlanWatcher - Gemini', () => {
 	describe('initial config', () => {
 		it('does not create watcher when geminiCli config disabled', () => {
 			__setConfigValues({ 'reviewa.planSupport': { claudeCode: false, geminiCli: false } });
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 
 			expect(registerGeminiPlanHook).not.toHaveBeenCalled();
 		});
 
 		it('creates watcher when geminiCli config enabled', () => {
 			__setConfigValues({ 'reviewa.planSupport': { geminiCli: true } });
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 
 			expect(registerGeminiPlanHook).toHaveBeenCalledTimes(1);
 			expect(fs.watch).toHaveBeenCalledWith(GEMINI_PLAN_METADATA_DIR, expect.any(Function));
@@ -339,7 +340,7 @@ describe('createPlanWatcher - Gemini', () => {
 				return { dispose: vi.fn() };
 			});
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			expect(registerGeminiPlanHook).not.toHaveBeenCalled();
 
 			// Enable Gemini
@@ -357,7 +358,7 @@ describe('createPlanWatcher - Gemini', () => {
 				return { dispose: vi.fn() };
 			});
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			// Gemini watcher is the second fs.watch call
 			const geminiWatcherClose = vi.mocked(fs.watch).mock.results[1].value.close;
 
@@ -380,7 +381,7 @@ describe('createPlanWatcher - Gemini', () => {
 			);
 			vi.mocked(fs.existsSync).mockReturnValue(true);
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			const callback = getWatchCallback();
 
 			callback('rename', 'my-plan.json');
@@ -390,7 +391,7 @@ describe('createPlanWatcher - Gemini', () => {
 
 		it('ignores non-.json files in metadata directory', () => {
 			__setConfigValues({ 'reviewa.planSupport': { geminiCli: true } });
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			const callback = getWatchCallback();
 
 			callback('rename', 'my-plan.md');
@@ -406,7 +407,7 @@ describe('createPlanWatcher - Gemini', () => {
 				JSON.stringify({ cwd: '/other/project', abs_path: '/home/user/.gemini/tmp/proj/sess/plans/plan.md', created_at: '2026-01-01' })
 			);
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			const callback = getWatchCallback();
 
 			callback('rename', 'plan.json');
@@ -421,7 +422,7 @@ describe('createPlanWatcher - Gemini', () => {
 			);
 			vi.mocked(fs.existsSync).mockReturnValue(false);
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			const callback = getWatchCallback();
 
 			callback('rename', 'plan.json');
@@ -435,7 +436,7 @@ describe('createPlanWatcher - Gemini', () => {
 			__setConfigValues({ 'reviewa.planSupport': { claudeCode: true, geminiCli: true } });
 			vi.mocked(vscode.workspace.onDidChangeConfiguration).mockImplementation(() => ({ dispose: vi.fn() }));
 
-			createPlanWatcher(context);
+			createPlanWatcher(context, new PlanStore());
 			const claudeWatcherClose = vi.mocked(fs.watch).mock.results[0].value.close;
 			const geminiWatcherClose = vi.mocked(fs.watch).mock.results[1].value.close;
 

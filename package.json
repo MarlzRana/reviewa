@@ -48,6 +48,10 @@
         {
           "id": "reviewa.commentTree",
           "name": "Comments"
+        },
+        {
+          "id": "reviewa.planTree",
+          "name": "Plans"
         }
       ]
     },
@@ -55,6 +59,10 @@
       {
         "view": "reviewa.commentTree",
         "contents": "No comments yet.\nAdd a comment by clicking the gutter in any file."
+      },
+      {
+        "view": "reviewa.planTree",
+        "contents": "No plans found for this workspace."
       }
     ],
     "commands": [

@@ -175,3 +175,31 @@ Reminder of your resources (which may give you insight into how to convert svgs 
 - VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
 - GitHub Pull Request extension: /Users/marlzrana/gh/Microsoft/vscode-pull-request-github
 
+6.
+## Mission
+I want to present user with a new tree view in the called "Plans". It should present plans whose cwd begins/is the workspace (eligible plans). The tree view should look like this roughly:
+```
+Claude Code Plans:
+  - some-claude-code-plan-name.md
+  - some-other-claude-code-plan-name.md
+Gemini-CLI:
+  - some-gemini-cli-plan-name.md
+  - some-other-gemini-cli-plan-name.md
+```
+- When there are no eligible plans for a particular coding agent tool, we should just hide e.g. "Claude Code Plans"
+- Plans should be ordered by creation date
+- We should integrate with the plan watchers for new "eligible" plans (which should up here as well), to highlight plans make during a "workspace session" in another color
+- Just present the plan name and not it's path
+- I should be able to click on a plan to open it
+
+
+## High level implementation guidance
+- We should load in the plan-metadata cwd at the start, and then sort by creation date, and use that to only present "eligible" plans
+- We need to add logic to the plan watching system to present new plans also in this view, and make sure it presented as with a special mark
+
+## Resources
+  - VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
+
+## Guidance
+  - Use the AskUserQuestion tool if anything in unclear/ambigious
+  - Make sure to understand the current plan system in depth first

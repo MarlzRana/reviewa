@@ -2,13 +2,14 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { activateClaudePlanWatcher, deactivateClaudePlanWatcher } from './plan-watchers/claudeCodePlanWatcher';
 import { activateGeminiPlanWatcher, deactivateGeminiPlanWatcher } from './plan-watchers/geminiCliPlanWatcher';
+import { PlanStore } from './planStore';
 
 interface PlanSupportConfig {
 	claudeCode: boolean;
 	geminiCli: boolean;
 }
 
-export function createPlanWatcher(context: vscode.ExtensionContext): void {
+export function createPlanWatcher(context: vscode.ExtensionContext, planStore: PlanStore): void {
 	let claudeWatcher: fs.FSWatcher | undefined;
 	let claudeActive = false;
 	let geminiWatcher: fs.FSWatcher | undefined;
@@ -18,7 +19,9 @@ export function createPlanWatcher(context: vscode.ExtensionContext): void {
 		if (claudeActive) {
 			deactivateClaude();
 		}
-		claudeWatcher = activateClaudePlanWatcher(context.globalState);
+		claudeWatcher = activateClaudePlanWatcher(context.globalState, metadata => {
+			planStore.add(planStore.toEntry(metadata, 'claude', true));
+		});
 		claudeActive = true;
 	}
 
@@ -34,7 +37,9 @@ export function createPlanWatcher(context: vscode.ExtensionContext): void {
 		if (geminiActive) {
 			deactivateGemini();
 		}
-		geminiWatcher = activateGeminiPlanWatcher();
+		geminiWatcher = activateGeminiPlanWatcher(metadata => {
+			planStore.add(planStore.toEntry(metadata, 'gemini', true));
+		});
 		geminiActive = true;
 	}
 

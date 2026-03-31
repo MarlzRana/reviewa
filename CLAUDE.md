@@ -64,6 +64,9 @@ npm run watch      # dev mode with file watching
 - `src/fileWatcher.ts` — watches comment dir for deletions to update thread state + comment labels
 - `src/statusBar.ts` — status bar item showing pending comment count with custom glasses icon
 - `src/commentStore.ts` — in-memory store + JSON file persistence, cleanup on deactivation, pending/processed count + change event
+- `src/planUtils.ts` — shared plan metadata reading + workspace relevance check used by watchers and plan store
+- `src/planStore.ts` — in-memory store for plan entries displayed in the Plans tree view, scans metadata dirs on activation
+- `src/planTreeView.ts` — Plans tree view with Claude/Gemini group headers, session-detected plans shown with sparkle icon
 - `src/types.ts` — `ReviewaComment` interface, `CommentSide` type, directory constants
 
 ## Resources
@@ -93,6 +96,7 @@ npx vitest run <file>  # run a specific test file
 - `src/test/unit/hook_managers.test.ts` — CLI detection, script installation, hook registration for all agents
 - `src/test/unit/ui_components.test.ts` — tree view data provider, status bar item
 - `src/test/unit/plan_and_copy.test.ts` — plan watcher, copy commands, format helpers
+- `src/test/unit/plan_tree_view.test.ts` — planUtils, PlanStore, plan tree view registration
 
 #### Rules for coding agents
 - **Every new feature must include unit tests** covering the happy path and key edge cases

@@ -98,6 +98,11 @@ export class MarkdownString {
 	}
 }
 
+// --- ThemeColor ---
+export class ThemeColor {
+	constructor(public readonly id: string) {}
+}
+
 // --- ThemeIcon ---
 export class ThemeIcon {
 	static File = new ThemeIcon('file');
@@ -199,6 +204,7 @@ export const comments = {
 export const window = {
 	createStatusBarItem: vi.fn((_alignment?: StatusBarAlignment) => createMockStatusBarItem()),
 	createTreeView: vi.fn((_viewId: string, _options: unknown) => createMockTreeView()),
+	registerFileDecorationProvider: vi.fn(() => ({ dispose: vi.fn() })),
 	showInformationMessage: vi.fn(),
 	showWarningMessage: vi.fn(),
 	showErrorMessage: vi.fn(),

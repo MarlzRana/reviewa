@@ -7,6 +7,8 @@ import { createStatusBarItem } from './statusBar';
 import { createCommentTreeView } from './commentTreeView';
 import { installHookScripts, registerHooks } from './hookManager';
 import { createPlanWatcher } from './planWatcher';
+import { PlanStore } from './planStore';
+import { createPlanTreeView } from './planTreeView';
 import { registerCopyCommands } from './copy_comments';
 
 let store: CommentStore;
@@ -25,7 +27,11 @@ export function activate(context: vscode.ExtensionContext) {
 	createFileWatcher(context, store);
 	createStatusBarItem(context, store);
 	createCommentTreeView(context, store);
-	createPlanWatcher(context);
+	const planStore = new PlanStore();
+	planStore.scanExisting();
+	createPlanTreeView(context, planStore);
+	createPlanWatcher(context, planStore);
+	context.subscriptions.push(planStore);
 	registerCopyCommands(context, store);
 	context.subscriptions.push(
 		vscode.commands.registerCommand('reviewa.claudeCodePlanLabel', () => {}),
