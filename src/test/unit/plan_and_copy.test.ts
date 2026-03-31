@@ -284,7 +284,7 @@ describe('createPlanWatcher', () => {
 			await new Promise(resolve => setTimeout(resolve, 0));
 
 			expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(
-				expect.stringContaining('copy buttons in the editor title bar')
+				expect.stringContaining('copy buttons in the editor title menu bar')
 			);
 		});
 

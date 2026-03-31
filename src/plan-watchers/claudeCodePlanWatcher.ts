@@ -49,7 +49,7 @@ async function openPlanFile(metadata: PlanMetadata, globalState: vscode.Memento)
 	if (count < NUDGE_LIMIT) {
 		globalState.update(NUDGE_KEY, count + 1);
 		vscode.window.showWarningMessage(
-			'Claude Code cannot inject comments on plan approve/reject - only on your next prompt. Use the copy buttons in the editor title bar to manually copy comments before your next message.'
+			'Claude Code cannot inject comments on plan approve/reject - only on your next prompt. Use the copy buttons in the editor title menu bar to manually copy comments before your next message.'
 		);
 	}
 }
