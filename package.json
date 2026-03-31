@@ -107,6 +107,14 @@
           "light": "images/copy_all_comments_light.svg",
           "dark": "images/copy_all_comments_dark.svg"
         }
+      },
+      {
+        "command": "reviewa.claudeCodePlanLabel",
+        "title": "Claude Code Plan"
+      },
+      {
+        "command": "reviewa.geminiCliPlanLabel",
+        "title": "Gemini CLI Plan"
       }
     ],
     "menus": {
@@ -146,9 +154,29 @@
         {
           "command": "reviewa.copyAllPendingComments",
           "when": "false"
+        },
+        {
+          "command": "reviewa.claudeCodePlanLabel",
+          "when": "false"
+        },
+        {
+          "command": "reviewa.geminiCliPlanLabel",
+          "when": "false"
         }
       ],
       "editor/title": [
+        {
+          "command": "reviewa.claudeCodePlanLabel",
+          "group": "navigation@0",
+          "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/",
+          "enablement": "false"
+        },
+        {
+          "command": "reviewa.geminiCliPlanLabel",
+          "group": "navigation@0",
+          "when": "resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/",
+          "enablement": "false"
+        },
         {
           "command": "reviewa.copyFileComments",
           "group": "navigation",

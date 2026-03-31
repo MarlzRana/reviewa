@@ -27,6 +27,10 @@ export function activate(context: vscode.ExtensionContext) {
 	createCommentTreeView(context, store);
 	createPlanWatcher(context);
 	registerCopyCommands(context, store);
+	context.subscriptions.push(
+		vscode.commands.registerCommand('reviewa.claudeCodePlanLabel', () => {}),
+		vscode.commands.registerCommand('reviewa.geminiCliPlanLabel', () => {}),
+	);
 }
 
 export function deactivate() {

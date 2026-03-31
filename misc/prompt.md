@@ -119,3 +119,10 @@ I want to support coding agents that might not have hook support, so we need to 
 ## Guidance
 - Use the AskUserQuestion tool if anything in unclear/ambigious
 - Generalize/Share where logical
+
+5.
+## Mission
+I want to make it clear when we are viewing a plan. Let's present the text "Claude Code Plan"/"Gemini CLI Plan" in the editor title bar on the relevant plans.
+
+## Resources
+- VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
