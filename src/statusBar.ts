@@ -6,7 +6,7 @@ export function createStatusBarItem(
 	store: CommentStore,
 ): void {
 	const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
-	item.command = 'workbench.action.focusCommentsPanel';
+	item.command = 'reviewa.commentTree.focus';
 	context.subscriptions.push(item);
 
 	let hasEverHadComment = false;
