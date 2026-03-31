@@ -26,7 +26,7 @@ function consumeComments(uuids: string[]): void {
 	}
 }
 
-async function copyPlanComments(store: CommentStore, uri?: vscode.Uri): Promise<void> {
+async function copyFileComments(store: CommentStore, uri?: vscode.Uri): Promise<void> {
 	const activeFilePath = uri?.fsPath ?? vscode.window.activeTextEditor?.document.uri.fsPath;
 	if (!activeFilePath) {
 		vscode.window.showWarningMessage('Reviewa: No active editor');
@@ -38,14 +38,14 @@ async function copyPlanComments(store: CommentStore, uri?: vscode.Uri): Promise<
 		.sort((a, b) => a.data.created_at.localeCompare(b.data.created_at));
 
 	if (matched.length === 0) {
-		vscode.window.showWarningMessage('Reviewa: No pending comments for this plan file');
+		vscode.window.showWarningMessage('Reviewa: No pending comments for this file');
 		return;
 	}
 
 	const text = matched.map(t => formatComment(t.data)).join('\n\n');
 	await vscode.env.clipboard.writeText(text);
 	consumeComments(matched.map(t => t.data.uuid));
-	vscode.window.showInformationMessage(`Reviewa: Copied ${matched.length} plan comment(s) to clipboard`);
+	vscode.window.showInformationMessage(`Reviewa: Copied ${matched.length} comment(s) in current file to clipboard`);
 }
 
 async function copyAllPendingComments(store: CommentStore): Promise<void> {
@@ -66,7 +66,7 @@ async function copyAllPendingComments(store: CommentStore): Promise<void> {
 
 export function registerCopyCommands(context: vscode.ExtensionContext, store: CommentStore): void {
 	context.subscriptions.push(
-		vscode.commands.registerCommand('reviewa.copyPlanComments', (uri?: vscode.Uri) => copyPlanComments(store, uri)),
+		vscode.commands.registerCommand('reviewa.copyFileComments', (uri?: vscode.Uri) => copyFileComments(store, uri)),
 		vscode.commands.registerCommand('reviewa.copyAllPendingComments', () => copyAllPendingComments(store)),
 	);
 }

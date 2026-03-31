@@ -93,8 +93,8 @@
         "icon": "$(check)"
       },
       {
-        "command": "reviewa.copyPlanComments",
-        "title": "Copy Plan Comments to Clipboard",
+        "command": "reviewa.copyFileComments",
+        "title": "Copy Comments in Current File",
         "icon": {
           "light": "images/copy_plan_comments_light.svg",
           "dark": "images/copy_plan_comments_dark.svg"
@@ -140,7 +140,7 @@
           "when": "false"
         },
         {
-          "command": "reviewa.copyPlanComments",
+          "command": "reviewa.copyFileComments",
           "when": "false"
         },
         {
@@ -150,7 +150,7 @@
       ],
       "editor/title": [
         {
-          "command": "reviewa.copyPlanComments",
+          "command": "reviewa.copyFileComments",
           "group": "navigation",
           "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/ || resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/"
         },
@@ -158,6 +158,16 @@
           "command": "reviewa.copyAllPendingComments",
           "group": "navigation",
           "when": "resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/ || resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/"
+        },
+        {
+          "command": "reviewa.copyFileComments",
+          "group": "navigation",
+          "when": "config.reviewa.copyCommentsEditorTitleBarItems && !(resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/) && !(resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/)"
+        },
+        {
+          "command": "reviewa.copyAllPendingComments",
+          "group": "navigation",
+          "when": "config.reviewa.copyCommentsEditorTitleBarItems && !(resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/) && !(resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/)"
         }
       ],
       "comments/commentThread/context": [
@@ -220,6 +230,11 @@
           "type": "boolean",
           "default": false,
           "description": "Automatically collapse comment threads when a coding agent consumes them"
+        },
+        "reviewa.copyCommentsEditorTitleBarItems": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show copy comment buttons in the editor title bar for all files"
         },
         "reviewa.planSupport": {
           "type": "object",

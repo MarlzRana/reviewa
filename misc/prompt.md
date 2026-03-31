@@ -96,3 +96,26 @@ I want to support showing plans related to a given workspace in the sidebar, but
 
 ## Guidance
 Use the AskUserQuestion tool if anything in unclear/ambigious 
+
+4.
+## Mission
+I want to support coding agents that might not have hook support, so we need to offer a workflow that enables that:
+- User leaves comments across files in the workspace
+- Then they should be able copy all the comments or just the comments in the current file open (in the same way as we can with plans)
+- Then they paste that into their coding agents (that we may not support r.e. context injection wise)
+
+### High level implementation:
+- Introduce a new configuration property `reviewa.copyCommentsActivityBarItems` that defaults to true:
+  - When false, we don't present the "copy all comments" and "copy file comments" in the editor title bar
+  - When true, we present the "copy all comments" and "copy file comments" in the editor title bar
+  - The plan "copy all comments" and "copy file comments" should still be gated by the `planSupport` configuration property and not the `reviewa.copyCommentsActivityBarItems`
+- Let's re-use the logic for the "copy all comments" and "copy plan comments" in the plan viewer logic:
+  - Let's the generalize the logic so that it is not plan specific (we can change "copy plan comments" to "copy comments in current file")
+  - Make sure the items appear appropriately as described
+  
+## Resources
+- VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
+
+## Guidance
+- Use the AskUserQuestion tool if anything in unclear/ambigious
+- Generalize/Share where logical

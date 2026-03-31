@@ -447,14 +447,14 @@ describe('registerCopyCommands', () => {
 		registerCopyCommands(context, store);
 	});
 
-	describe('copyPlanComments', () => {
+	describe('copyFileComments', () => {
 		it('filters by file path AND pending status', async () => {
 			const target = '/test/workspace/plans/plan.md';
 			addCommentToStore({ abs_path: target, status: 'pending', content: 'Fix A' });
 			addCommentToStore({ abs_path: target, status: 'processed', content: 'Already done' });
 			addCommentToStore({ abs_path: '/other/file.ts', status: 'pending', content: 'Wrong file' });
 
-			const handler = getCommandHandler('reviewa.copyPlanComments');
+			const handler = getCommandHandler('reviewa.copyFileComments');
 			await handler(vscode.Uri.file(target));
 
 			expect(vscode.env.clipboard.writeText).toHaveBeenCalledTimes(1);
@@ -475,7 +475,7 @@ describe('registerCopyCommands', () => {
 				content: 'Please fix this',
 			});
 
-			const handler = getCommandHandler('reviewa.copyPlanComments');
+			const handler = getCommandHandler('reviewa.copyFileComments');
 			await handler(vscode.Uri.file(target));
 
 			const clipboardText = vi.mocked(vscode.env.clipboard.writeText).mock.calls[0][0] as string;
@@ -489,7 +489,7 @@ describe('registerCopyCommands', () => {
 			const c1 = addCommentToStore({ abs_path: target });
 			const c2 = addCommentToStore({ abs_path: target });
 
-			const handler = getCommandHandler('reviewa.copyPlanComments');
+			const handler = getCommandHandler('reviewa.copyFileComments');
 			await handler(vscode.Uri.file(target));
 
 			expect(vscode.env.clipboard.writeText).toHaveBeenCalledTimes(1);
@@ -497,14 +497,14 @@ describe('registerCopyCommands', () => {
 			expect(fs.unlinkSync).toHaveBeenCalledWith(expect.stringContaining(c1.uuid));
 			expect(fs.unlinkSync).toHaveBeenCalledWith(expect.stringContaining(c2.uuid));
 			expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
-				'Reviewa: Copied 2 plan comment(s) to clipboard'
+				'Reviewa: Copied 2 comment(s) in current file to clipboard'
 			);
 		});
 
 		it('shows warning when no active editor and no URI provided', async () => {
 			vscode.window.activeTextEditor = undefined;
 
-			const handler = getCommandHandler('reviewa.copyPlanComments');
+			const handler = getCommandHandler('reviewa.copyFileComments');
 			await handler();
 
 			expect(vscode.window.showWarningMessage).toHaveBeenCalledWith('Reviewa: No active editor');
@@ -518,7 +518,7 @@ describe('registerCopyCommands', () => {
 			};
 			addCommentToStore({ abs_path: target });
 
-			const handler = getCommandHandler('reviewa.copyPlanComments');
+			const handler = getCommandHandler('reviewa.copyFileComments');
 			await handler(); // no URI argument
 
 			expect(vscode.env.clipboard.writeText).toHaveBeenCalledTimes(1);
@@ -528,11 +528,11 @@ describe('registerCopyCommands', () => {
 			const target = '/test/workspace/plan.md';
 			addCommentToStore({ abs_path: target, status: 'processed' });
 
-			const handler = getCommandHandler('reviewa.copyPlanComments');
+			const handler = getCommandHandler('reviewa.copyFileComments');
 			await handler(vscode.Uri.file(target));
 
 			expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(
-				'Reviewa: No pending comments for this plan file'
+				'Reviewa: No pending comments for this file'
 			);
 			expect(vscode.env.clipboard.writeText).not.toHaveBeenCalled();
 		});
@@ -595,7 +595,7 @@ describe('registerCopyCommands', () => {
 				content: 'Check this',
 			});
 
-			const handler = getCommandHandler('reviewa.copyPlanComments');
+			const handler = getCommandHandler('reviewa.copyFileComments');
 			await handler(vscode.Uri.file(target));
 
 			const clipboardText = vi.mocked(vscode.env.clipboard.writeText).mock.calls[0][0] as string;
@@ -612,7 +612,7 @@ describe('registerCopyCommands', () => {
 				content: 'Removed',
 			});
 
-			const handler = getCommandHandler('reviewa.copyPlanComments');
+			const handler = getCommandHandler('reviewa.copyFileComments');
 			await handler(vscode.Uri.file(target));
 
 			const clipboardText = vi.mocked(vscode.env.clipboard.writeText).mock.calls[0][0] as string;
@@ -629,7 +629,7 @@ describe('registerCopyCommands', () => {
 				content: 'OK',
 			});
 
-			const handler = getCommandHandler('reviewa.copyPlanComments');
+			const handler = getCommandHandler('reviewa.copyFileComments');
 			await handler(vscode.Uri.file(target));
 
 			const clipboardText = vi.mocked(vscode.env.clipboard.writeText).mock.calls[0][0] as string;
@@ -651,7 +651,7 @@ describe('registerCopyCommands', () => {
 				content: 'Should throw instead',
 			});
 
-			const handler = getCommandHandler('reviewa.copyPlanComments');
+			const handler = getCommandHandler('reviewa.copyFileComments');
 			await handler(vscode.Uri.file(target));
 
 			const clipboardText = vi.mocked(vscode.env.clipboard.writeText).mock.calls[0][0] as string;
@@ -668,7 +668,7 @@ describe('registerCopyCommands', () => {
 			const c2 = addCommentToStore({ abs_path: target });
 			const c3 = addCommentToStore({ abs_path: target });
 
-			const handler = getCommandHandler('reviewa.copyPlanComments');
+			const handler = getCommandHandler('reviewa.copyFileComments');
 			await handler(vscode.Uri.file(target));
 
 			expect(fs.unlinkSync).toHaveBeenCalledTimes(3);
@@ -684,7 +684,7 @@ describe('registerCopyCommands', () => {
 			addCommentToStore({ abs_path: target });
 			vi.mocked(fs.unlinkSync).mockImplementation(() => { throw new Error('ENOENT'); });
 
-			const handler = getCommandHandler('reviewa.copyPlanComments');
+			const handler = getCommandHandler('reviewa.copyFileComments');
 			// Should not throw
 			await expect(handler(vscode.Uri.file(target))).resolves.toBeUndefined();
 			expect(vscode.env.clipboard.writeText).toHaveBeenCalled();
