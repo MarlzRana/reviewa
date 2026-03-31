@@ -94,7 +94,7 @@
       },
       {
         "command": "reviewa.copyFileComments",
-        "title": "Copy Comments in Current File",
+        "title": "Copy All Pending Comments in Current File",
         "icon": {
           "light": "images/copy_plan_comments_light.svg",
           "dark": "images/copy_plan_comments_dark.svg"
@@ -190,12 +190,12 @@
         {
           "command": "reviewa.copyFileComments",
           "group": "navigation",
-          "when": "config.reviewa.copyCommentsEditorTitleBarItems && !(resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/) && !(resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/)"
+          "when": "config.reviewa.copyAllPendingCommentsInFile && !(resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/) && !(resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/)"
         },
         {
           "command": "reviewa.copyAllPendingComments",
           "group": "navigation",
-          "when": "config.reviewa.copyCommentsEditorTitleBarItems && !(resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/) && !(resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/)"
+          "when": "config.reviewa.copyAllPendingCommentsInFile && !(resourcePath =~ /\\.claude\\/plans\\/.+\\.md$/) && !(resourcePath =~ /\\.gemini\\/tmp\\/.+\\/plans\\/.+\\.md$/)"
         }
       ],
       "comments/commentThread/context": [
@@ -259,10 +259,10 @@
           "default": false,
           "description": "Automatically collapse comment threads when a coding agent consumes them"
         },
-        "reviewa.copyCommentsEditorTitleBarItems": {
+        "reviewa.copyAllPendingCommentsInFile": {
           "type": "boolean",
           "default": true,
-          "description": "Show copy comment buttons in the editor title bar for all files"
+          "description": "Show buttons in the editor title bar to copy all pending comments in the current file to clipboard"
         },
         "reviewa.planSupport": {
           "type": "object",
