@@ -2,6 +2,13 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.13] - 2026-03-31
+
+### Changed
+
+- Lowered Claude Code plan copy nudge limit from 20 to 10 views
+- Improved Claude Code plan warning message for clarity
+
 ## [0.0.12] - 2026-03-31
 
 ### Added
