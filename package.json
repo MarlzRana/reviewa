@@ -133,6 +133,22 @@
       {
         "command": "reviewa.geminiCliPlanLabel",
         "title": "Gemini CLI Plan"
+      },
+      {
+        "command": "reviewa.filterPendingOn",
+        "title": "✓ Pending"
+      },
+      {
+        "command": "reviewa.filterPendingOff",
+        "title": "Pending"
+      },
+      {
+        "command": "reviewa.filterSeenOn",
+        "title": "✓ Seen"
+      },
+      {
+        "command": "reviewa.filterSeenOff",
+        "title": "Seen"
       }
     ],
     "menus": {
@@ -188,6 +204,44 @@
         {
           "command": "reviewa.geminiCliPlanLabel",
           "when": "false"
+        },
+        {
+          "command": "reviewa.filterPendingOn",
+          "when": "false"
+        },
+        {
+          "command": "reviewa.filterPendingOff",
+          "when": "false"
+        },
+        {
+          "command": "reviewa.filterSeenOn",
+          "when": "false"
+        },
+        {
+          "command": "reviewa.filterSeenOff",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "reviewa.filterPendingOn",
+          "when": "view == reviewa.commentTree && reviewa.filterPending",
+          "group": "1_filter"
+        },
+        {
+          "command": "reviewa.filterPendingOff",
+          "when": "view == reviewa.commentTree && !reviewa.filterPending",
+          "group": "1_filter"
+        },
+        {
+          "command": "reviewa.filterSeenOn",
+          "when": "view == reviewa.commentTree && reviewa.filterSeen",
+          "group": "1_filter"
+        },
+        {
+          "command": "reviewa.filterSeenOff",
+          "when": "view == reviewa.commentTree && !reviewa.filterSeen",
+          "group": "1_filter"
         }
       ],
       "editor/title": [

@@ -40,6 +40,9 @@ class ReviewaTreeDataProvider implements vscode.TreeDataProvider<TreeNode> {
 	private readonly _onDidChangeTreeData = new vscode.EventEmitter<void>();
 	readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
+	showPending = true;
+	showSeen = true;
+
 	constructor(private readonly store: CommentStore) {}
 
 	refresh(): void {
@@ -104,9 +107,15 @@ class ReviewaTreeDataProvider implements vscode.TreeDataProvider<TreeNode> {
 		return item;
 	}
 
+	private matchesFilter(tracked: TrackedComment): boolean {
+		if (tracked.data.status === 'pending' && this.showPending) { return true; }
+		if (tracked.data.status === 'processed' && this.showSeen) { return true; }
+		return false;
+	}
+
 	getChildren(element?: TreeNode): TreeNode[] {
 		if (!element) {
-			const all = this.store.getAll();
+			const all = this.store.getAll().filter(t => this.matchesFilter(t));
 			const grouped = new Map<string, TrackedComment[]>();
 			for (const tracked of all) {
 				const key = tracked.data.abs_path;
@@ -142,6 +151,28 @@ export function createCommentTreeView(
 	store: CommentStore,
 ): void {
 	const provider = new ReviewaTreeDataProvider(store);
+
+	vscode.commands.executeCommand('setContext', 'reviewa.filterPending', true);
+	vscode.commands.executeCommand('setContext', 'reviewa.filterSeen', true);
+
+	function togglePending() {
+		provider.showPending = !provider.showPending;
+		vscode.commands.executeCommand('setContext', 'reviewa.filterPending', provider.showPending);
+		provider.refresh();
+	}
+
+	function toggleSeen() {
+		provider.showSeen = !provider.showSeen;
+		vscode.commands.executeCommand('setContext', 'reviewa.filterSeen', provider.showSeen);
+		provider.refresh();
+	}
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('reviewa.filterPendingOn', togglePending),
+		vscode.commands.registerCommand('reviewa.filterPendingOff', togglePending),
+		vscode.commands.registerCommand('reviewa.filterSeenOn', toggleSeen),
+		vscode.commands.registerCommand('reviewa.filterSeenOff', toggleSeen),
+	);
 
 	const treeView = vscode.window.createTreeView('reviewa.commentTree', {
 		treeDataProvider: provider,

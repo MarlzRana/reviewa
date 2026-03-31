@@ -203,3 +203,16 @@ Gemini-CLI:
 ## Guidance
   - Use the AskUserQuestion tool if anything in unclear/ambigious
   - Make sure to understand the current plan system in depth first
+
+
+7.
+## Mission
+I want to be able filter what comments are are shown in the comments view. There should be three dots in the corner of the comments view that I can click on to choose to filter what comments are presented to me. The below options should be available to me:
+- Pending (captures pending and re-pending comments)
+- Seen (captures processed comments)
+
+## Resources
+  - VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
+
+## Guidance
+  - Use the AskUserQuestion tool if anything in unclear/ambigious
