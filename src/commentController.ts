@@ -130,14 +130,14 @@ export function createReviewaCommentController(
 	context: vscode.ExtensionContext,
 	store: CommentStore,
 ): vscode.CommentController {
-	const controller = vscode.comments.createCommentController('reviewa', 'Reviewa');
+	const controller = vscode.comments.createCommentController('reviewa', 'Add comment');
 	context.subscriptions.push(controller);
 
 	const authorPromise = getGitHubAuthor();
 
 	controller.options = {
 		prompt: 'Leave a comment',
-		placeHolder: 'Describe what should be changed here...',
+		placeHolder: 'Leave your comment here...',
 	};
 
 	controller.commentingRangeProvider = {
