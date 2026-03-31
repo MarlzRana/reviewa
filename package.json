@@ -292,7 +292,7 @@
       "properties": {
         "reviewa.autoCollapseOnCodingAgentConsumption": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Automatically collapse comment threads when a coding agent consumes them"
         },
         "reviewa.copyAllPendingCommentsInFile": {
