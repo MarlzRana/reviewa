@@ -20,7 +20,7 @@ vi.mock('fs', () => ({
 }));
 
 import * as fs from 'fs';
-import { isRelevantPlanMetadata, readPlanMetadataFile } from '../../planUtils';
+import { isRelevantPlanMetadata, readPlanMetadataFile, extractPlanTitle } from '../../planUtils';
 import { PlanStore } from '../../planStore';
 import { createPlanTreeView } from '../../planTreeView';
 
@@ -75,6 +75,48 @@ describe('readPlanMetadataFile', () => {
 	it('returns null when file does not exist', () => {
 		vi.mocked(fs.readFileSync).mockImplementation(() => { throw new Error('ENOENT'); });
 		expect(readPlanMetadataFile('/meta', 'missing.json')).toBeNull();
+	});
+});
+
+describe('extractPlanTitle', () => {
+	it('extracts title from valid plan heading', () => {
+		vi.mocked(fs.readFileSync).mockReturnValue('# Plan: Add CSV Support\n\nSome content...');
+		expect(extractPlanTitle('/plans/random-name.md')).toBe('Add CSV Support');
+	});
+
+	it('extracts generic heading when no Plan: prefix', () => {
+		vi.mocked(fs.readFileSync).mockReturnValue('# Some Other Heading\nContent...');
+		expect(extractPlanTitle('/plans/random-name.md')).toBe('Some Other Heading');
+	});
+
+	it('extracts heading with no space after #', () => {
+		vi.mocked(fs.readFileSync).mockReturnValue('#NoSpace Title\nContent...');
+		expect(extractPlanTitle('/plans/random-name.md')).toBe('NoSpace Title');
+	});
+
+	it('falls back to basename when file is empty', () => {
+		vi.mocked(fs.readFileSync).mockReturnValue('');
+		expect(extractPlanTitle('/plans/random-name.md')).toBe('random-name.md');
+	});
+
+	it('falls back to basename when file does not exist', () => {
+		vi.mocked(fs.readFileSync).mockImplementation(() => { throw new Error('ENOENT'); });
+		expect(extractPlanTitle('/plans/random-name.md')).toBe('random-name.md');
+	});
+
+	it('handles extra whitespace in heading', () => {
+		vi.mocked(fs.readFileSync).mockReturnValue('#  Plan:   Spaced Title  \nContent');
+		expect(extractPlanTitle('/plans/x.md')).toBe('Spaced Title');
+	});
+
+	it('handles file with no trailing newline', () => {
+		vi.mocked(fs.readFileSync).mockReturnValue('# Plan: No Newline');
+		expect(extractPlanTitle('/plans/x.md')).toBe('No Newline');
+	});
+
+	it('falls back to basename when first line is not a heading', () => {
+		vi.mocked(fs.readFileSync).mockReturnValue('Just plain text\nContent');
+		expect(extractPlanTitle('/plans/my-plan.md')).toBe('my-plan.md');
 	});
 });
 
@@ -168,7 +210,22 @@ describe('PlanStore', () => {
 		expect(store.getBySource('claude')).toHaveLength(0);
 	});
 
-	it('toEntry converts metadata to PlanEntry', () => {
+	it('toEntry extracts plan title from file content', () => {
+		vi.mocked(fs.readFileSync).mockReturnValue('# Plan: My Great Plan\n\nDetails...');
+		const metadata = { cwd: '/test', abs_path: '/plans/my-plan.md', created_at: '2026-01-01' };
+		const entry = store.toEntry(metadata, 'claude', true);
+
+		expect(entry).toEqual({
+			name: 'My Great Plan',
+			absPath: '/plans/my-plan.md',
+			createdAt: '2026-01-01',
+			source: 'claude',
+			sessionDetected: true,
+		});
+	});
+
+	it('toEntry falls back to basename when plan file is unreadable', () => {
+		vi.mocked(fs.readFileSync).mockImplementation(() => { throw new Error('ENOENT'); });
 		const metadata = { cwd: '/test', abs_path: '/plans/my-plan.md', created_at: '2026-01-01' };
 		const entry = store.toEntry(metadata, 'claude', true);
 

@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { CommentStore, TrackedComment } from './commentStore';
 import { CLAUDE_PLANS_DIR } from './types';
+import { extractPlanTitle } from './planUtils';
 
 const GEMINI_PLANS_PATTERN = /[\\/]\.gemini[\\/]tmp[\\/][^\\/]+[\\/][^\\/]+[\\/]plans[\\/]/;
 
@@ -53,7 +54,7 @@ class ReviewaTreeDataProvider implements vscode.TreeDataProvider<TreeNode> {
 		if (element instanceof FileNode) {
 			const planSource = getPlanSource(element.absPath);
 			const label = planSource
-				? path.basename(element.absPath)
+				? extractPlanTitle(element.absPath)
 				: vscode.workspace.asRelativePath(element.absPath);
 			const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.Expanded);
 			item.resourceUri = vscode.Uri.file(element.absPath);

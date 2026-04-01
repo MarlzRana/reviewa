@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PLAN_METADATA_DIR, GEMINI_PLAN_METADATA_DIR } from './types';
-import { PlanMetadata, readPlanMetadataFile, isRelevantPlanMetadata } from './planUtils';
+import { PlanMetadata, readPlanMetadataFile, isRelevantPlanMetadata, extractPlanTitle } from './planUtils';
 
 export type PlanSource = 'claude' | 'gemini';
 
@@ -54,7 +54,7 @@ export class PlanStore implements vscode.Disposable {
 
 	toEntry(metadata: PlanMetadata, source: PlanSource, sessionDetected: boolean): PlanEntry {
 		return {
-			name: path.basename(metadata.abs_path),
+			name: extractPlanTitle(metadata.abs_path),
 			absPath: metadata.abs_path,
 			createdAt: metadata.created_at,
 			source,

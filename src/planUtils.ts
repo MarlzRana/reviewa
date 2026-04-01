@@ -17,6 +17,25 @@ export function readPlanMetadataFile(metadataDir: string, filename: string): Pla
 	}
 }
 
+export function extractPlanTitle(absPath: string): string {
+	try {
+		const content = fs.readFileSync(absPath, 'utf-8');
+		const newlineIndex = content.indexOf('\n');
+		const firstLine = (newlineIndex === -1 ? content : content.slice(0, newlineIndex)).trim();
+		const planMatch = firstLine.match(/^#\s+Plan:\s+(.+)$/);
+		if (planMatch) {
+			return planMatch[1].trim();
+		}
+		const headingMatch = firstLine.match(/^#\s*(.+)$/);
+		if (headingMatch) {
+			return headingMatch[1].trim();
+		}
+	} catch {
+		// File missing or unreadable
+	}
+	return path.basename(absPath);
+}
+
 export function isRelevantPlanMetadata(metadata: { cwd?: string }): boolean {
 	if (!metadata.cwd) {
 		return false;
