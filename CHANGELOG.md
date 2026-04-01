@@ -2,6 +2,12 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.18] - 2026-04-01
+
+### Changed
+
+- Plan labels in tree views and plan store now display the plan title extracted from file content instead of the file name
+
 ## [0.0.17] - 2026-03-31
 
 ### Added
