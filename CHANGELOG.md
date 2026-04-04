@@ -2,6 +2,25 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.19] - 2026-04-04
+
+### Added
+
+- `reviewa.autoOpenOnPlanCreation` setting — automatically open plan files in the editor when created by a coding CLI (enabled by default)
+
+### Fixed
+
+- Race condition when `onPlanDetected` ran after plan deletion logic
+- Bad import path after hook manager refactor
+- Debounce on plan delete handler to handle atomic save operations
+
+### Changed
+
+- Hook managers moved to `src/hook-managers/` directory
+- Renamed `copy_comments.ts` to `copyComments.ts` (camelCase convention)
+- Replaced `reviewa.planSupport` setting with simpler `reviewa.autoOpenOnPlanCreation` boolean
+- Invalid plan metadata is now automatically cleaned up
+
 ## [0.0.18] - 2026-04-01
 
 ### Changed

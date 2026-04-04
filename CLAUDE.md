@@ -22,12 +22,12 @@ VS Code extension that lets developers leave inline code review comments on any 
 - `side` field: `'file'` | `'addition'` | `'removal'` — determines line prefix in context output
 
 ### Hook Integration
-- Hook management is split across three files coordinated by `src/hookManager.ts`
-- **Claude Code hook** (`src/claudeCodeHookManager.ts`): `~/.reviewa/v1/hook.js` (Node.js) + `hook.sh` wrapper, registered in `~/.claude/settings.json`
-- **Codex hook** (`src/codexHookManager.ts`): `~/.reviewa/v1/hook.py` (Python stdlib only), registered in `~/.codex/hooks.json`
+- Hook management is split across three files in `src/hook-managers/` coordinated by `src/hookManager.ts`
+- **Claude Code hook** (`src/hook-managers/claudeCodeHookManager.ts`): `~/.reviewa/v1/hook.js` (Node.js) + `hook.sh` wrapper, registered in `~/.claude/settings.json`
+- **Codex hook** (`src/hook-managers/codexHookManager.ts`): `~/.reviewa/v1/hook.py` (Python stdlib only), registered in `~/.codex/hooks.json`
   - Ensures `codex_hooks = true` in `~/.codex/config.toml` `[features]` section
   - Shows a VS Code warning if `codex_hooks` is explicitly set to `false`
-- **Gemini CLI hook** (`src/geminiCliHookManager.ts`): `~/.reviewa/v1/gemini-cli/hooks/before_model_insert_comments.js` (Node.js) + `.sh` wrapper, registered in `~/.gemini/settings.json`
+- **Gemini CLI hook** (`src/hook-managers/geminiCliHookManager.ts`): `~/.reviewa/v1/gemini-cli/hooks/before_model_insert_comments.js` (Node.js) + `.sh` wrapper, registered in `~/.gemini/settings.json`
   - Uses `BeforeModel` hook event — injects comments directly into the LLM request messages
   - Also registers an `AfterTool` hook (`after_tool_plan_hook.js`) to track Gemini plan file creation for the plan watcher
 - Claude and Codex hooks use `UserPromptSubmit`; Gemini uses `BeforeModel` — all filter comments by `cwd`, then delete consumed JSON files
@@ -57,9 +57,9 @@ npm run watch      # dev mode with file watching
 ## Key Files
 - `src/commentController.ts` — Comment Controller setup, submit handler, diff side detection, GitHub author resolution
 - `src/hookManager.ts` — coordinates hook script installation and registration across all supported agents
-- `src/claudeCodeHookManager.ts` — Claude Code hook script (Node.js) + `~/.claude/settings.json` registration
-- `src/codexHookManager.ts` — Codex hook script (Python) + `~/.codex/hooks.json` registration + config.toml feature flag
-- `src/geminiCliHookManager.ts` — Gemini CLI hook script (Node.js) + `~/.gemini/settings.json` registration
+- `src/hook-managers/claudeCodeHookManager.ts` — Claude Code hook script (Node.js) + `~/.claude/settings.json` registration
+- `src/hook-managers/codexHookManager.ts` — Codex hook script (Python) + `~/.codex/hooks.json` registration + config.toml feature flag
+- `src/hook-managers/geminiCliHookManager.ts` — Gemini CLI hook script (Node.js) + `~/.gemini/settings.json` registration
 - `src/gitUtils.ts` — git URI parsing + repo root resolution via `vscode.git` extension API
 - `src/fileWatcher.ts` — watches comment dir for deletions to update thread state + comment labels
 - `src/statusBar.ts` — status bar item showing pending comment count with custom glasses icon
