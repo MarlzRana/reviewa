@@ -27,6 +27,9 @@ export class PlanStore implements vscode.Disposable {
   readonly onDidChange = this._onDidChange.event;
 
   add(entry: PlanEntry): void {
+    if (!fs.existsSync(entry.absPath)) {
+      return;
+    }
     this.plans.set(entry.absPath, entry);
     this.startPlanFileWatcher(entry);
     this._onDidChange.fire();
