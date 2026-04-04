@@ -9,7 +9,7 @@ import { installHookScripts, registerHooks } from './hookManager';
 import { createPlanWatcher } from './planWatcher';
 import { PlanStore } from './planStore';
 import { createPlanTreeView } from './planTreeView';
-import { registerCopyCommands } from './copy_comments';
+import { registerCopyCommands } from './copyComments';
 
 let store: CommentStore;
 
