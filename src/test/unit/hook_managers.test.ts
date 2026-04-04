@@ -13,9 +13,9 @@ const mockedFs = vi.mocked(fs);
 const mockedExecSync = vi.mocked(execSync);
 
 // Import modules under test
-import { hasClaudeCode, installClaudeCodeHookScript, installClaudeCodePlanHookScript, registerClaudeCodeHook, registerClaudeCodePlanHook, unregisterClaudeCodePlanHook } from '../../claudeCodeHookManager';
-import { hasCodex, installCodexHookScript, registerCodexHook } from '../../codexHookManager';
-import { hasGeminiCli, installGeminiCliHookScript, installGeminiCliPlanHookScript, registerGeminiCliHook, registerGeminiCliPlanHook, unregisterGeminiCliPlanHook } from '../../geminiCliHookManager';
+import { hasClaudeCode, installClaudeCodeHookScript, installClaudeCodePlanHookScript, registerClaudeCodeHook, registerClaudeCodePlanHook, unregisterClaudeCodePlanHook } from '../../hook-managers/claudeCodeHookManager';
+import { hasCodex, installCodexHookScript, registerCodexHook } from '../../hook-managers/codexHookManager';
+import { hasGeminiCli, installGeminiCliHookScript, installGeminiCliPlanHookScript, registerGeminiCliHook, registerGeminiCliPlanHook, unregisterGeminiCliPlanHook } from '../../hook-managers/geminiCliHookManager';
 import { installHookScripts, registerHooks, registerClaudePlanHook, unregisterClaudePlanHook, registerGeminiPlanHook, unregisterGeminiPlanHook } from '../../hookManager';
 import { REVIEWA_DIR, CLAUDE_HOOKS_DIR, GEMINI_HOOKS_DIR } from '../../types';
 
