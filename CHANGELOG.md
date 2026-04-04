@@ -2,6 +2,12 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.21] - 2026-04-04
+
+### Fixed
+
+- Plan hooks are no longer deleted on extension deactivation, so they persist across VS Code sessions
+
 ## [0.0.20] - 2026-04-04
 
 ### Added
