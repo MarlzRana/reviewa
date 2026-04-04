@@ -58,16 +58,22 @@ export class PlanStore implements vscode.Disposable {
     }
 
     try {
-      // fs.watch emits 'rename' for creation, deletion, and renames — check existsSync to confirm deletion
+      // fs.watch emits 'rename' for creation, deletion, and renames.
+      // Editors (including VS Code) save via atomic rename, which briefly makes the file disappear.
+      // Debounce to avoid misclassifying a save as a deletion.
       const watcher = fs.watch(entry.absPath, (eventType) => {
-        if (eventType === 'rename' && !fs.existsSync(entry.absPath)) {
-          try {
-            fs.unlinkSync(entry.metadataPath);
-          } catch {
-            /* already gone */
-          }
-          watcher.close();
-          this.planFileWatchers.delete(entry.absPath);
+        if (eventType === 'rename') {
+          setTimeout(() => {
+            if (!fs.existsSync(entry.absPath)) {
+              try {
+                fs.unlinkSync(entry.metadataPath);
+              } catch {
+                /* already gone */
+              }
+              watcher.close();
+              this.planFileWatchers.delete(entry.absPath);
+            }
+          }, 100);
         }
       });
       this.planFileWatchers.set(entry.absPath, watcher);

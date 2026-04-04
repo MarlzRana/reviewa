@@ -463,7 +463,8 @@ describe('PlanStore', () => {
     );
   });
 
-  it('plan file watcher deletes metadata when plan file is deleted', () => {
+  it('plan file watcher deletes metadata when plan file is deleted', async () => {
+    vi.useFakeTimers();
     let planFileWatchCallback: (eventType: string) => void = () => {};
     vi.mocked(fs.watch).mockImplementation((_path, callback) => {
       planFileWatchCallback = callback as (eventType: string) => void;
@@ -483,7 +484,36 @@ describe('PlanStore', () => {
     vi.mocked(fs.existsSync).mockReturnValueOnce(false);
     planFileWatchCallback('rename');
 
+    expect(fs.unlinkSync).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(100);
     expect(fs.unlinkSync).toHaveBeenCalledWith('/meta/a.json');
+    vi.useRealTimers();
+  });
+
+  it('plan file watcher does not delete metadata on atomic save', async () => {
+    vi.useFakeTimers();
+    let planFileWatchCallback: (eventType: string) => void = () => {};
+    vi.mocked(fs.watch).mockImplementation((_path, callback) => {
+      planFileWatchCallback = callback as (eventType: string) => void;
+      return { close: vi.fn() } as unknown as fs.FSWatcher;
+    });
+
+    store.add({
+      name: 'a.md',
+      absPath: '/plans/a.md',
+      metadataPath: '/meta/a.json',
+      createdAt: '2026-01-01',
+      source: 'claude',
+      sessionDetected: false,
+    });
+
+    // File briefly disappears during atomic save, but is back by the time debounce fires
+    planFileWatchCallback('rename');
+    // existsSync still returns true (default mock) — file reappeared after atomic save
+
+    await vi.advanceTimersByTimeAsync(100);
+    expect(fs.unlinkSync).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('dispose closes all plan file watchers', () => {
