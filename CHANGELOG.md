@@ -2,6 +2,12 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [0.0.20] - 2026-04-04
+
+### Added
+
+- "Copy All Pending Comments in Current File" and "Copy All Pending Comments to Clipboard" commands now available from the VS Code command palette (under "Reviewa:" category)
+
 ## [0.0.19] - 2026-04-04
 
 ### Added
