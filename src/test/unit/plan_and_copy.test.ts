@@ -38,17 +38,13 @@ vi.mock('fs', () => {
 
 vi.mock('../../hookManager', () => ({
   registerClaudePlanHook: vi.fn(),
-  unregisterClaudePlanHook: vi.fn(),
   registerGeminiPlanHook: vi.fn(),
-  unregisterGeminiPlanHook: vi.fn(),
 }));
 
 import * as fs from 'fs';
 import {
   registerClaudePlanHook,
-  unregisterClaudePlanHook,
   registerGeminiPlanHook,
-  unregisterGeminiPlanHook,
 } from '../../hookManager';
 import { createPlanWatcher } from '../../planWatcher';
 import { PlanStore } from '../../planStore';
@@ -306,7 +302,7 @@ describe('createPlanWatcher', () => {
   });
 
   describe('dispose', () => {
-    it('deactivates both watchers and unregisters hooks on dispose', () => {
+    it('deactivates both watchers on dispose without unregistering hooks', () => {
       createPlanWatcher(context, new PlanStore());
       const claudeWatcherClose = vi.mocked(fs.watch).mock.results[0].value.close;
       const geminiWatcherClose = vi.mocked(fs.watch).mock.results[1].value.close;
@@ -318,8 +314,6 @@ describe('createPlanWatcher', () => {
 
       expect(claudeWatcherClose).toHaveBeenCalled();
       expect(geminiWatcherClose).toHaveBeenCalled();
-      expect(unregisterClaudePlanHook).toHaveBeenCalled();
-      expect(unregisterGeminiPlanHook).toHaveBeenCalled();
     });
   });
 

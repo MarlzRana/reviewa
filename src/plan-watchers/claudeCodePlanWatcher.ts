@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PLAN_METADATA_DIR } from '../types';
-import { registerClaudePlanHook, unregisterClaudePlanHook } from '../hookManager';
+import { registerClaudePlanHook } from '../hookManager';
 import { PlanMetadata, readPlanMetadataFile, isRelevantPlanMetadata } from '../planUtils';
 
 const NUDGE_KEY = 'claudePlanCopyNudgeCount';
@@ -60,5 +60,4 @@ export function deactivateClaudePlanWatcher(watcher: fs.FSWatcher | undefined): 
 	if (watcher) {
 		watcher.close();
 	}
-	unregisterClaudePlanHook();
 }

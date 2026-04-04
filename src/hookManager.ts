@@ -6,7 +6,6 @@ import {
   installClaudeCodePlanHookScript,
   registerClaudeCodeHook,
   registerClaudeCodePlanHook,
-  unregisterClaudeCodePlanHook,
 } from './hook-managers/claudeCodeHookManager';
 import {
   hasCodex,
@@ -19,7 +18,6 @@ import {
   installGeminiCliPlanHookScript,
   registerGeminiCliHook,
   registerGeminiCliPlanHook,
-  unregisterGeminiCliPlanHook,
 } from './hook-managers/geminiCliHookManager';
 
 export function installHookScripts(): void {
@@ -49,16 +47,9 @@ export function registerClaudePlanHook(): void {
   }
 }
 
-export function unregisterClaudePlanHook(): void {
-  unregisterClaudeCodePlanHook();
-}
-
 export function registerGeminiPlanHook(): void {
   if (hasGeminiCli()) {
     registerGeminiCliPlanHook();
   }
 }
 
-export function unregisterGeminiPlanHook(): void {
-  unregisterGeminiCliPlanHook();
-}

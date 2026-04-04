@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { GEMINI_PLAN_METADATA_DIR } from '../types';
-import { registerGeminiPlanHook, unregisterGeminiPlanHook } from '../hookManager';
+import { registerGeminiPlanHook } from '../hookManager';
 import { PlanMetadata, readPlanMetadataFile, isRelevantPlanMetadata } from '../planUtils';
 
 async function openGeminiPlanFile(metadata: PlanMetadata): Promise<void> {
@@ -48,5 +48,4 @@ export function deactivateGeminiPlanWatcher(watcher: fs.FSWatcher | undefined): 
 	if (watcher) {
 		watcher.close();
 	}
-	unregisterGeminiPlanHook();
 }

@@ -16,7 +16,7 @@ const mockedExecSync = vi.mocked(execSync);
 import { hasClaudeCode, installClaudeCodeHookScript, installClaudeCodePlanHookScript, registerClaudeCodeHook, registerClaudeCodePlanHook, unregisterClaudeCodePlanHook } from '../../hook-managers/claudeCodeHookManager';
 import { hasCodex, installCodexHookScript, registerCodexHook } from '../../hook-managers/codexHookManager';
 import { hasGeminiCli, installGeminiCliHookScript, installGeminiCliPlanHookScript, registerGeminiCliHook, registerGeminiCliPlanHook, unregisterGeminiCliPlanHook } from '../../hook-managers/geminiCliHookManager';
-import { installHookScripts, registerHooks, registerClaudePlanHook, unregisterClaudePlanHook, registerGeminiPlanHook, unregisterGeminiPlanHook } from '../../hookManager';
+import { installHookScripts, registerHooks, registerClaudePlanHook, registerGeminiPlanHook } from '../../hookManager';
 import { REVIEWA_DIR, CLAUDE_HOOKS_DIR, GEMINI_HOOKS_DIR } from '../../types';
 
 // Import vscode mock to access showWarningMessage
@@ -825,26 +825,6 @@ describe('hookManager orchestrator', () => {
 		});
 	});
 
-	describe('unregisterClaudePlanHook', () => {
-		it('calls unregister unconditionally (no CLI detection)', () => {
-			mockedExecSync.mockImplementation(() => { throw new Error('not found'); });
-			const existing = {
-				hooks: {
-					PostToolUse: [
-						{ matcher: 'Write', hooks: [{ type: 'command', command: `bash ${path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh')}` }] },
-					]
-				}
-			};
-			mockedFs.readFileSync.mockReturnValue(JSON.stringify(existing));
-
-			unregisterClaudePlanHook();
-
-			expect(mockedFs.writeFileSync).toHaveBeenCalled();
-			const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
-			expect(written.hooks.PostToolUse).toBeUndefined();
-		});
-	});
-
 	describe('registerGeminiPlanHook', () => {
 		it('registers plan hook if Gemini CLI is detected', () => {
 			mockedExecSync.mockReturnValue(Buffer.from('/usr/local/bin/gemini'));
@@ -868,23 +848,4 @@ describe('hookManager orchestrator', () => {
 		});
 	});
 
-	describe('unregisterGeminiPlanHook', () => {
-		it('calls unregister unconditionally (no CLI detection)', () => {
-			mockedExecSync.mockImplementation(() => { throw new Error('not found'); });
-			const existing = {
-				hooks: {
-					AfterTool: [
-						{ matcher: '(write_file|replace)', hooks: [{ type: 'command', command: `bash ${path.join(HOME, '.reviewa', 'v1', 'gemini-cli', 'hooks', 'after_tool_plan_hook.sh')}` }] },
-					]
-				}
-			};
-			mockedFs.readFileSync.mockReturnValue(JSON.stringify(existing));
-
-			unregisterGeminiPlanHook();
-
-			expect(mockedFs.writeFileSync).toHaveBeenCalled();
-			const written = JSON.parse(String(mockedFs.writeFileSync.mock.calls[0][1]));
-			expect(written.hooks.AfterTool).toBeUndefined();
-		});
-	});
 });
