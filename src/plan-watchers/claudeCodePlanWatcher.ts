@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as path from 'path';
 import { PLAN_METADATA_DIR } from '../types';
 import { registerClaudePlanHook, unregisterClaudePlanHook } from '../hookManager';
 import { PlanMetadata, readPlanMetadataFile, isRelevantPlanMetadata } from '../planUtils';
@@ -25,7 +26,8 @@ async function openPlanFile(metadata: PlanMetadata, globalState: vscode.Memento)
 
 export function activateClaudePlanWatcher(
 	globalState: vscode.Memento,
-	onPlanDetected?: (metadata: PlanMetadata) => void,
+	onPlanDetected?: (metadata: PlanMetadata, metadataPath: string) => void,
+	onMetadataDeleted?: (metadataPath: string) => void,
 ): fs.FSWatcher | undefined {
 	registerClaudePlanHook();
 
@@ -37,10 +39,13 @@ export function activateClaudePlanWatcher(
 				return;
 			}
 
+			const metadataPath = path.join(PLAN_METADATA_DIR, filename);
 			const metadata = readPlanMetadataFile(PLAN_METADATA_DIR, filename);
 			if (metadata && isRelevantPlanMetadata(metadata)) {
-				onPlanDetected?.(metadata);
+				onPlanDetected?.(metadata, metadataPath);
 				openPlanFile(metadata, globalState);
+			} else if (!metadata && !fs.existsSync(metadataPath)) {
+				onMetadataDeleted?.(metadataPath);
 			}
 		});
 	} catch {

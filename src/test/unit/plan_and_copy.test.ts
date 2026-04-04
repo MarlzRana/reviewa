@@ -325,6 +325,44 @@ describe('createPlanWatcher', () => {
     });
   });
 
+  describe('metadata deletion', () => {
+    it('calls planStore.remove when metadata file is deleted', () => {
+      __setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
+      // readFileSync throws (file gone), existsSync returns false for metadata path
+      vi.mocked(fs.readFileSync).mockImplementation(() => { throw new Error('ENOENT'); });
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+
+      const planStore = new PlanStore();
+      const removeSpy = vi.spyOn(planStore, 'remove');
+
+      createPlanWatcher(context, planStore);
+      const callback = getWatchCallback();
+
+      callback('rename', 'deleted-plan.json');
+
+      expect(removeSpy).toHaveBeenCalledWith(
+        expect.stringContaining('deleted-plan.json'),
+      );
+    });
+
+    it('does not call planStore.remove when metadata file exists but is invalid', () => {
+      __setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });
+      // readFileSync throws (invalid JSON), but existsSync returns true (file still exists)
+      vi.mocked(fs.readFileSync).mockImplementation(() => { throw new Error('parse error'); });
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+
+      const planStore = new PlanStore();
+      const removeSpy = vi.spyOn(planStore, 'remove');
+
+      createPlanWatcher(context, planStore);
+      const callback = getWatchCallback();
+
+      callback('rename', 'invalid.json');
+
+      expect(removeSpy).not.toHaveBeenCalled();
+    });
+  });
+
   describe('dispose', () => {
     it('deactivates and unregisters plan hook on dispose', () => {
       __setConfigValues({ 'reviewa.planSupport': { claudeCode: true } });

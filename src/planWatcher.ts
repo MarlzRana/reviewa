@@ -19,9 +19,13 @@ export function createPlanWatcher(context: vscode.ExtensionContext, planStore: P
 		if (claudeActive) {
 			deactivateClaude();
 		}
-		claudeWatcher = activateClaudePlanWatcher(context.globalState, metadata => {
-			planStore.add(planStore.toEntry(metadata, 'claude', true));
-		});
+		claudeWatcher = activateClaudePlanWatcher(
+			context.globalState,
+			(metadata, metadataPath) => {
+				planStore.add(planStore.toEntry(metadata, 'claude', true, metadataPath));
+			},
+			metadataPath => planStore.remove(metadataPath),
+		);
 		claudeActive = true;
 	}
 
@@ -37,9 +41,12 @@ export function createPlanWatcher(context: vscode.ExtensionContext, planStore: P
 		if (geminiActive) {
 			deactivateGemini();
 		}
-		geminiWatcher = activateGeminiPlanWatcher(metadata => {
-			planStore.add(planStore.toEntry(metadata, 'gemini', true));
-		});
+		geminiWatcher = activateGeminiPlanWatcher(
+			(metadata, metadataPath) => {
+				planStore.add(planStore.toEntry(metadata, 'gemini', true, metadataPath));
+			},
+			metadataPath => planStore.remove(metadataPath),
+		);
 		geminiActive = true;
 	}
 

@@ -216,3 +216,21 @@ I want to be able filter what comments are are shown in the comments view. There
 
 ## Guidance
   - Use the AskUserQuestion tool if anything in unclear/ambigious
+
+8.
+## Mission
+Plans can be deleted by users and are auto-deleted after a set amount of days configurable. We want to make sure we don't load stale plans in the plan viewer and also if a user does go ahead and delete a plan, that the plan view updates.
+
+## Implementation
+- When we load in relevant plans, out of the relevant plans, check if the plan still exists, and if it doesn't, bin the plan metadata please - the remaining subset is called the "relevant existing plans"
+- For each relevant existing plan, watch the actual plan file, and if it is deleted, bin the plan-metadata entry (don't directly tell the planTreeView here)
+- The planTreeView should be watching the plan-metadata dir for plan metadata, and given a deleted plan-metadata it should remove the entry in the view. It should do this by:
+  - In the plan store, also store the plan-metadata path
+  - If there is a plan-metadata that is deleted, it goes ahead and deletes it from the plan store (and hence stops presenting it)
+
+## Resources
+  - VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
+
+## Guidance
+  - Use the AskUserQuestion tool until you are 95% confidence in your approach
+  - There may be a cleaner way to do this, if so please suggest and ask for my feedback via the AskUserQuestion

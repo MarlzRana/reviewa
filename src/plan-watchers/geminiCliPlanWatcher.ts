@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as path from 'path';
 import { GEMINI_PLAN_METADATA_DIR } from '../types';
 import { registerGeminiPlanHook, unregisterGeminiPlanHook } from '../hookManager';
 import { PlanMetadata, readPlanMetadataFile, isRelevantPlanMetadata } from '../planUtils';
@@ -13,7 +14,8 @@ async function openGeminiPlanFile(metadata: PlanMetadata): Promise<void> {
 }
 
 export function activateGeminiPlanWatcher(
-	onPlanDetected?: (metadata: PlanMetadata) => void,
+	onPlanDetected?: (metadata: PlanMetadata, metadataPath: string) => void,
+	onMetadataDeleted?: (metadataPath: string) => void,
 ): fs.FSWatcher | undefined {
 	registerGeminiPlanHook();
 
@@ -25,10 +27,13 @@ export function activateGeminiPlanWatcher(
 				return;
 			}
 
+			const metadataPath = path.join(GEMINI_PLAN_METADATA_DIR, filename);
 			const metadata = readPlanMetadataFile(GEMINI_PLAN_METADATA_DIR, filename);
 			if (metadata && isRelevantPlanMetadata(metadata)) {
-				onPlanDetected?.(metadata);
+				onPlanDetected?.(metadata, metadataPath);
 				openGeminiPlanFile(metadata);
+			} else if (!metadata && !fs.existsSync(metadataPath)) {
+				onMetadataDeleted?.(metadataPath);
 			}
 		});
 	} catch {

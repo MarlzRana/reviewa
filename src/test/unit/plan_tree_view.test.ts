@@ -8,12 +8,14 @@ vi.mock('fs', () => ({
 	readFileSync: vi.fn(),
 	readdirSync: vi.fn(() => []),
 	existsSync: vi.fn(() => true),
+	unlinkSync: vi.fn(),
 	mkdirSync: vi.fn(),
 	watch: vi.fn(() => ({ close: vi.fn() })),
 	default: {
 		readFileSync: vi.fn(),
 		readdirSync: vi.fn(() => []),
 		existsSync: vi.fn(() => true),
+		unlinkSync: vi.fn(),
 		mkdirSync: vi.fn(),
 		watch: vi.fn(() => ({ close: vi.fn() })),
 	},
@@ -131,8 +133,8 @@ describe('PlanStore', () => {
 	});
 
 	it('adds and retrieves entries by source', () => {
-		store.add({ name: 'a.md', absPath: '/plans/a.md', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
-		store.add({ name: 'b.md', absPath: '/plans/b.md', createdAt: '2026-01-02', source: 'gemini', sessionDetected: false });
+		store.add({ name: 'a.md', absPath: '/plans/a.md', metadataPath: '/meta/a.json', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
+		store.add({ name: 'b.md', absPath: '/plans/b.md', metadataPath: '/meta/b.json', createdAt: '2026-01-02', source: 'gemini', sessionDetected: false });
 
 		expect(store.getBySource('claude')).toHaveLength(1);
 		expect(store.getBySource('gemini')).toHaveLength(1);
@@ -140,17 +142,17 @@ describe('PlanStore', () => {
 	});
 
 	it('sorts by createdAt descending', () => {
-		store.add({ name: 'old.md', absPath: '/plans/old.md', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
-		store.add({ name: 'new.md', absPath: '/plans/new.md', createdAt: '2026-01-03', source: 'claude', sessionDetected: false });
-		store.add({ name: 'mid.md', absPath: '/plans/mid.md', createdAt: '2026-01-02', source: 'claude', sessionDetected: false });
+		store.add({ name: 'old.md', absPath: '/plans/old.md', metadataPath: '/meta/old.json', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
+		store.add({ name: 'new.md', absPath: '/plans/new.md', metadataPath: '/meta/new.json', createdAt: '2026-01-03', source: 'claude', sessionDetected: false });
+		store.add({ name: 'mid.md', absPath: '/plans/mid.md', metadataPath: '/meta/mid.json', createdAt: '2026-01-02', source: 'claude', sessionDetected: false });
 
 		const plans = store.getBySource('claude');
 		expect(plans.map(p => p.name)).toEqual(['new.md', 'mid.md', 'old.md']);
 	});
 
 	it('deduplicates by absPath', () => {
-		store.add({ name: 'a.md', absPath: '/plans/a.md', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
-		store.add({ name: 'a.md', absPath: '/plans/a.md', createdAt: '2026-01-01', source: 'claude', sessionDetected: true });
+		store.add({ name: 'a.md', absPath: '/plans/a.md', metadataPath: '/meta/a.json', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
+		store.add({ name: 'a.md', absPath: '/plans/a.md', metadataPath: '/meta/a.json', createdAt: '2026-01-01', source: 'claude', sessionDetected: true });
 
 		expect(store.getBySource('claude')).toHaveLength(1);
 		expect(store.getBySource('claude')[0].sessionDetected).toBe(true);
@@ -160,7 +162,7 @@ describe('PlanStore', () => {
 		const listener = vi.fn();
 		store.onDidChange(listener);
 
-		store.add({ name: 'a.md', absPath: '/plans/a.md', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
+		store.add({ name: 'a.md', absPath: '/plans/a.md', metadataPath: '/meta/a.json', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
 		expect(listener).toHaveBeenCalledTimes(1);
 	});
 
@@ -213,11 +215,12 @@ describe('PlanStore', () => {
 	it('toEntry extracts plan title from file content', () => {
 		vi.mocked(fs.readFileSync).mockReturnValue('# Plan: My Great Plan\n\nDetails...');
 		const metadata = { cwd: '/test', abs_path: '/plans/my-plan.md', created_at: '2026-01-01' };
-		const entry = store.toEntry(metadata, 'claude', true);
+		const entry = store.toEntry(metadata, 'claude', true, '/meta/my-plan.json');
 
 		expect(entry).toEqual({
 			name: 'My Great Plan',
 			absPath: '/plans/my-plan.md',
+			metadataPath: '/meta/my-plan.json',
 			createdAt: '2026-01-01',
 			source: 'claude',
 			sessionDetected: true,
@@ -227,15 +230,104 @@ describe('PlanStore', () => {
 	it('toEntry falls back to basename when plan file is unreadable', () => {
 		vi.mocked(fs.readFileSync).mockImplementation(() => { throw new Error('ENOENT'); });
 		const metadata = { cwd: '/test', abs_path: '/plans/my-plan.md', created_at: '2026-01-01' };
-		const entry = store.toEntry(metadata, 'claude', true);
+		const entry = store.toEntry(metadata, 'claude', true, '/meta/my-plan.json');
 
 		expect(entry).toEqual({
 			name: 'my-plan.md',
 			absPath: '/plans/my-plan.md',
+			metadataPath: '/meta/my-plan.json',
 			createdAt: '2026-01-01',
 			source: 'claude',
 			sessionDetected: true,
 		});
+	});
+
+	it('remove deletes entry by metadataPath and fires onDidChange', () => {
+		const listener = vi.fn();
+		store.onDidChange(listener);
+
+		store.add({ name: 'a.md', absPath: '/plans/a.md', metadataPath: '/meta/a.json', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
+		listener.mockClear();
+
+		store.remove('/meta/a.json');
+
+		expect(store.getBySource('claude')).toHaveLength(0);
+		expect(listener).toHaveBeenCalledTimes(1);
+	});
+
+	it('remove does nothing for non-existent metadataPath', () => {
+		const listener = vi.fn();
+		store.onDidChange(listener);
+
+		store.add({ name: 'a.md', absPath: '/plans/a.md', metadataPath: '/meta/a.json', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
+		listener.mockClear();
+
+		store.remove('/meta/nonexistent.json');
+
+		expect(store.getBySource('claude')).toHaveLength(1);
+		expect(listener).not.toHaveBeenCalled();
+	});
+
+	it('scanExisting prunes stale plans whose files no longer exist', () => {
+		vi.mocked(fs.readdirSync).mockImplementation((dir) => {
+			if (String(dir) === PLAN_METADATA_DIR) { return ['stale.json'] as unknown as fs.Dirent[]; }
+			return [] as unknown as fs.Dirent[];
+		});
+		vi.mocked(fs.readFileSync).mockReturnValue(
+			JSON.stringify({ cwd: '/test/workspace', abs_path: '/home/.claude/plans/stale.md', created_at: '2026-01-01' })
+		);
+		vi.mocked(fs.existsSync).mockReturnValue(false);
+
+		store.scanExisting();
+
+		expect(store.getBySource('claude')).toHaveLength(0);
+		expect(fs.unlinkSync).toHaveBeenCalledWith(expect.stringContaining('stale.json'));
+	});
+
+	it('scanExisting starts plan file watchers for existing plans', () => {
+		vi.mocked(fs.readdirSync).mockImplementation((dir) => {
+			if (String(dir) === PLAN_METADATA_DIR) { return ['plan.json'] as unknown as fs.Dirent[]; }
+			return [] as unknown as fs.Dirent[];
+		});
+		vi.mocked(fs.readFileSync).mockImplementation((filePath) => {
+			if (String(filePath).includes('plan.json')) {
+				return JSON.stringify({ cwd: '/test/workspace', abs_path: '/home/.claude/plans/plan.md', created_at: '2026-01-01' });
+			}
+			return '# Plan: Test';
+		});
+		vi.mocked(fs.existsSync).mockReturnValue(true);
+
+		store.scanExisting();
+
+		expect(fs.watch).toHaveBeenCalledWith('/home/.claude/plans/plan.md', expect.any(Function));
+	});
+
+	it('plan file watcher deletes metadata when plan file is deleted', () => {
+		let planFileWatchCallback: (eventType: string) => void = () => {};
+		vi.mocked(fs.watch).mockImplementation((_path, callback) => {
+			planFileWatchCallback = callback as (eventType: string) => void;
+			return { close: vi.fn() } as unknown as fs.FSWatcher;
+		});
+
+		store.add({ name: 'a.md', absPath: '/plans/a.md', metadataPath: '/meta/a.json', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
+
+		// Simulate plan file deletion
+		vi.mocked(fs.existsSync).mockReturnValue(false);
+		planFileWatchCallback('rename');
+
+		expect(fs.unlinkSync).toHaveBeenCalledWith('/meta/a.json');
+	});
+
+	it('dispose closes all plan file watchers', () => {
+		const closeFn = vi.fn();
+		vi.mocked(fs.watch).mockReturnValue({ close: closeFn } as unknown as fs.FSWatcher);
+
+		store.add({ name: 'a.md', absPath: '/plans/a.md', metadataPath: '/meta/a.json', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
+		store.add({ name: 'b.md', absPath: '/plans/b.md', metadataPath: '/meta/b.json', createdAt: '2026-01-02', source: 'gemini', sessionDetected: false });
+
+		store.dispose();
+
+		expect(closeFn).toHaveBeenCalledTimes(2);
 	});
 });
 
@@ -261,7 +353,7 @@ describe('createPlanTreeView', () => {
 		createPlanTreeView(context, store);
 
 		// Adding a plan should trigger refresh (via onDidChange)
-		store.add({ name: 'a.md', absPath: '/plans/a.md', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
+		store.add({ name: 'a.md', absPath: '/plans/a.md', metadataPath: '/meta/a.json', createdAt: '2026-01-01', source: 'claude', sessionDetected: false });
 
 		// The tree view was created — if there were errors in the refresh path, createTreeView would fail
 		expect(vscode.window.createTreeView).toHaveBeenCalledTimes(1);
