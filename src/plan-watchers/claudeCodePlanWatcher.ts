@@ -9,6 +9,9 @@ const NUDGE_KEY = 'claudePlanCopyNudgeCount';
 const NUDGE_LIMIT = 10;
 
 async function openPlanFile(metadata: PlanMetadata, globalState: vscode.Memento): Promise<void> {
+	if (!vscode.workspace.getConfiguration('reviewa').get('autoOpenOnPlanCreation', true)) {
+		return;
+	}
 	if (!fs.existsSync(metadata.abs_path)) {
 		return;
 	}

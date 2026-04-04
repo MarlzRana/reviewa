@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as vscode from 'vscode';
-import { __resetAllMocks } from './mocks/vscode';
+import { __resetAllMocks, __setConfigValues } from './mocks/vscode';
 import {
   makeReviewaComment,
   makeMockThread,
@@ -137,6 +137,25 @@ describe('createPlanWatcher', () => {
       callback('rename', 'my-plan.md');
       callback('rename', 'my-plan.txt');
       callback('rename', null);
+
+      expect(vscode.window.showTextDocument).not.toHaveBeenCalled();
+    });
+
+    it('does not open plan when autoOpenOnPlanCreation is false', () => {
+      __setConfigValues({ 'reviewa.autoOpenOnPlanCreation': false });
+      vi.mocked(fs.readFileSync).mockReturnValue(
+        JSON.stringify({
+          cwd: '/test/workspace',
+          abs_path: '/home/user/.claude/plans/my-plan.md',
+          created_at: '2026-01-01',
+        }),
+      );
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+
+      createPlanWatcher(context, new PlanStore());
+      const callback = getWatchCallbackFor(PLAN_METADATA_DIR);
+
+      callback('rename', 'my-plan.json');
 
       expect(vscode.window.showTextDocument).not.toHaveBeenCalled();
     });

@@ -6,6 +6,9 @@ import { registerGeminiPlanHook, unregisterGeminiPlanHook } from '../hookManager
 import { PlanMetadata, readPlanMetadataFile, isRelevantPlanMetadata } from '../planUtils';
 
 async function openGeminiPlanFile(metadata: PlanMetadata): Promise<void> {
+	if (!vscode.workspace.getConfiguration('reviewa').get('autoOpenOnPlanCreation', true)) {
+		return;
+	}
 	if (!fs.existsSync(metadata.abs_path)) {
 		return;
 	}

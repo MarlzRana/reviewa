@@ -353,6 +353,11 @@
           "type": "boolean",
           "default": true,
           "description": "Show buttons in the editor title bar to copy all pending comments in the current file to clipboard"
+        },
+        "reviewa.autoOpenOnPlanCreation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open plan files in the editor when they are created by a coding CLI"
         }
       }
     }
