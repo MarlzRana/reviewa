@@ -2,6 +2,8 @@
 
 Leave inline code review comments on any file or git diff in VS Code, automatically injected into Claude Code, Codex, or Gemini CLI's context to be resolved.
 
+![Demo](Demo.gif)
+
 ## Features
 
 - **Inline comments** — click the comment gutter icon on any line to leave a review comment, just like on a GitHub PR
