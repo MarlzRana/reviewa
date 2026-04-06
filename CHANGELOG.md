@@ -2,6 +2,12 @@
 
 All notable changes to the Reviewa extension will be documented in this file.
 
+## [1.0.0] - 2026-04-07
+
+### Added
+
+- Demo GIF on the VS Code Marketplace page and README
+
 ## [0.0.21] - 2026-04-04
 
 ### Fixed
