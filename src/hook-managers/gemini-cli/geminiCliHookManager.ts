@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { execSync } from 'child_process';
-import { GEMINI_HOOKS_DIR } from '../types';
+import { GEMINI_HOOKS_DIR } from '../../types';
 
 export function hasGeminiCli(): boolean {
   try {

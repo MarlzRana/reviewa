@@ -6,19 +6,19 @@ import {
   installClaudeCodePlanHookScript,
   registerClaudeCodeHook,
   registerClaudeCodePlanHook,
-} from './hook-managers/claudeCodeHookManager';
+} from './hook-managers/claude-code/claudeCodeHookManager';
 import {
   hasCodex,
   installCodexHookScript,
   registerCodexHook,
-} from './hook-managers/codexHookManager';
+} from './hook-managers/codex/codexHookManager';
 import {
   hasGeminiCli,
   installGeminiCliHookScript,
   installGeminiCliPlanHookScript,
   registerGeminiCliHook,
   registerGeminiCliPlanHook,
-} from './hook-managers/geminiCliHookManager';
+} from './hook-managers/gemini-cli/geminiCliHookManager';
 
 export function installHookScripts(): void {
   fs.mkdirSync(REVIEWA_DIR, { recursive: true });
@@ -52,4 +52,3 @@ export function registerGeminiPlanHook(): void {
     registerGeminiCliPlanHook();
   }
 }
-
