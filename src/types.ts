@@ -1,6 +1,12 @@
 import * as path from 'path';
 import * as os from 'os';
 
+export enum CodingCliTool {
+	ClaudeCode = 'claude-code',
+	Codex = 'codex',
+	GeminiCli = 'gemini-cli',
+}
+
 export type CommentSide = 'file' | 'addition' | 'removal';
 export type IntendedConsumer = 'claude_code' | 'gemini_cli';
 

@@ -234,3 +234,19 @@ Plans can be deleted by users and are auto-deleted after a set amount of days co
 ## Guidance
   - Use the AskUserQuestion tool until you are 95% confidence in your approach
   - There may be a cleaner way to do this, if so please suggest and ask for my feedback via the AskUserQuestion
+
+9.
+## Mission
+Currently the hook content themselves are as strings literals in the hook managers. I would like for them to be literal files that we copy onto the users machine, instead of creating a new file and writing that string content to that particular file.
+
+## Guidance
+- For each hook manager, extract out the hook content into separate files. E.g. after_tool_plan_hook.js in ./hook-managers/gemini-cli/
+- In each hook manager, instead aim to copy the content of each file - rather than creating a new file and writing content to it
+- **MUST** not copy the hook content into the files by yourself. Use deterministic commands like sed e.g. to grab what you need from extract from the hook manager into the separate hook file
+- The hooks files should maintain the names they have
+
+## Resources
+  - VS Code Extension API docs: /Users/marlzrana/gh/microsoft/vscode-docs
+
+## Guidance
+  - Use the AskUserQuestion tool until you are 95% confidence in your approach

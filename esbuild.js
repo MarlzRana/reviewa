@@ -1,4 +1,6 @@
 const esbuild = require("esbuild");
+const fs = require("fs");
+const path = require("path");
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -23,6 +25,30 @@ const esbuildProblemMatcherPlugin = {
 	},
 };
 
+const hookScriptExts = new Set(['.js', '.sh', '.py']);
+
+/**
+ * @type {import('esbuild').Plugin}
+ */
+const copyHookScriptsPlugin = {
+	name: 'copy-hook-scripts',
+	setup(build) {
+		build.onEnd(() => {
+			const agents = ['claude-code', 'codex', 'gemini-cli'];
+			for (const agent of agents) {
+				const srcDir = path.join('src', 'hook-managers', agent);
+				const destDir = path.join('dist', 'hook-scripts', agent);
+				fs.mkdirSync(destDir, { recursive: true });
+				for (const file of fs.readdirSync(srcDir)) {
+					if (hookScriptExts.has(path.extname(file))) {
+						fs.copyFileSync(path.join(srcDir, file), path.join(destDir, file));
+					}
+				}
+			}
+		});
+	},
+};
+
 async function main() {
 	const ctx = await esbuild.context({
 		entryPoints: [
@@ -38,6 +64,7 @@ async function main() {
 		external: ['vscode'],
 		logLevel: 'silent',
 		plugins: [
+			copyHookScriptsPlugin,
 			/* add to the end of plugins array */
 			esbuildProblemMatcherPlugin,
 		],

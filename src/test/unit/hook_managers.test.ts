@@ -78,28 +78,21 @@ describe('CLI Detection', () => {
 
 describe('Script Installation', () => {
 	describe('installClaudeCodeHookScript', () => {
-		it('writes hook.js and hook.sh with correct permissions', () => {
+		it('copies hook.js and hook.sh with correct permissions', () => {
 			installClaudeCodeHookScript();
 
 			const hookJsPath = path.join(REVIEWA_DIR, 'hook.js');
 			const hookShPath = path.join(REVIEWA_DIR, 'hook.sh');
 
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookJsPath, expect.stringContaining('#!/usr/bin/env node'), { mode: 0o755 });
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookShPath, expect.stringContaining('#!/bin/bash'), { mode: 0o755 });
-		});
-
-		it('hook.js content includes comment processing logic', () => {
-			installClaudeCodeHookScript();
-			const call = mockedFs.writeFileSync.mock.calls.find(c => String(c[0]).endsWith('hook.js'));
-			expect(call).toBeDefined();
-			const content = String(call![1]);
-			expect(content).toContain('UserPromptSubmit');
-			expect(content).toContain('COMMENTS_DIR');
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(expect.stringContaining('claude-code/hook.js'), hookJsPath);
+			expect(mockedFs.chmodSync).toHaveBeenCalledWith(hookJsPath, 0o755);
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(expect.stringContaining('claude-code/hook.sh'), hookShPath);
+			expect(mockedFs.chmodSync).toHaveBeenCalledWith(hookShPath, 0o755);
 		});
 	});
 
 	describe('installClaudeCodePlanHookScript', () => {
-		it('creates CLAUDE_HOOKS_DIR and writes plan hook files', () => {
+		it('creates CLAUDE_HOOKS_DIR and copies plan hook files', () => {
 			installClaudeCodePlanHookScript();
 
 			expect(mockedFs.mkdirSync).toHaveBeenCalledWith(CLAUDE_HOOKS_DIR, { recursive: true });
@@ -107,22 +100,25 @@ describe('Script Installation', () => {
 			const hookJsPath = path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.js');
 			const hookShPath = path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh');
 
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookJsPath, expect.stringContaining('#!/usr/bin/env node'), { mode: 0o755 });
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookShPath, expect.stringContaining('#!/bin/bash'), { mode: 0o755 });
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(expect.stringContaining('claude-code/post_tool_use_plan_hook.js'), hookJsPath);
+			expect(mockedFs.chmodSync).toHaveBeenCalledWith(hookJsPath, 0o755);
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(expect.stringContaining('claude-code/post_tool_use_plan_hook.sh'), hookShPath);
+			expect(mockedFs.chmodSync).toHaveBeenCalledWith(hookShPath, 0o755);
 		});
 	});
 
 	describe('installCodexHookScript', () => {
-		it('writes hook.py with correct permissions', () => {
+		it('copies hook.py with correct permissions', () => {
 			installCodexHookScript();
 
 			const hookPyPath = path.join(REVIEWA_DIR, 'hook.py');
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookPyPath, expect.stringContaining('#!/usr/bin/env python3'), { mode: 0o755 });
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(expect.stringContaining('codex/hook.py'), hookPyPath);
+			expect(mockedFs.chmodSync).toHaveBeenCalledWith(hookPyPath, 0o755);
 		});
 	});
 
 	describe('installGeminiCliHookScript', () => {
-		it('creates hooks directory and writes scripts with correct permissions', () => {
+		it('creates hooks directory and copies scripts with correct permissions', () => {
 			installGeminiCliHookScript();
 
 			expect(mockedFs.mkdirSync).toHaveBeenCalledWith(GEMINI_HOOKS_DIR, { recursive: true });
@@ -130,23 +126,15 @@ describe('Script Installation', () => {
 			const hookJsPath = path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.js');
 			const hookShPath = path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.sh');
 
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookJsPath, expect.stringContaining('#!/usr/bin/env node'), { mode: 0o755 });
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookShPath, expect.stringContaining('#!/bin/bash'), { mode: 0o755 });
-		});
-
-		it('hook script uses BeforeModel event and injects into llm_request.messages', () => {
-			installGeminiCliHookScript();
-			const call = mockedFs.writeFileSync.mock.calls.find(c => String(c[0]).endsWith('before_model_insert_comments.js'));
-			expect(call).toBeDefined();
-			const content = String(call![1]);
-			expect(content).toContain('BeforeModel');
-			expect(content).toContain('llm_request');
-			expect(content).not.toContain('additionalContext');
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(expect.stringContaining('gemini-cli/before_model_insert_comments.js'), hookJsPath);
+			expect(mockedFs.chmodSync).toHaveBeenCalledWith(hookJsPath, 0o755);
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(expect.stringContaining('gemini-cli/before_model_insert_comments.sh'), hookShPath);
+			expect(mockedFs.chmodSync).toHaveBeenCalledWith(hookShPath, 0o755);
 		});
 	});
 
 	describe('installGeminiCliPlanHookScript', () => {
-		it('creates hooks directory and writes plan hook files', () => {
+		it('creates hooks directory and copies plan hook files', () => {
 			installGeminiCliPlanHookScript();
 
 			expect(mockedFs.mkdirSync).toHaveBeenCalledWith(GEMINI_HOOKS_DIR, { recursive: true });
@@ -154,18 +142,10 @@ describe('Script Installation', () => {
 			const hookJsPath = path.join(GEMINI_HOOKS_DIR, 'after_tool_plan_hook.js');
 			const hookShPath = path.join(GEMINI_HOOKS_DIR, 'after_tool_plan_hook.sh');
 
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookJsPath, expect.stringContaining('#!/usr/bin/env node'), { mode: 0o755 });
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(hookShPath, expect.stringContaining('#!/bin/bash'), { mode: 0o755 });
-		});
-
-		it('plan hook script checks for Gemini plans pattern and writes metadata', () => {
-			installGeminiCliPlanHookScript();
-			const call = mockedFs.writeFileSync.mock.calls.find(c => String(c[0]).endsWith('after_tool_plan_hook.js'));
-			expect(call).toBeDefined();
-			const content = String(call![1]);
-			expect(content).toContain('.gemini');
-			expect(content).toContain('plan-metadata');
-			expect(content).toContain('abs_path');
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(expect.stringContaining('gemini-cli/after_tool_plan_hook.js'), hookJsPath);
+			expect(mockedFs.chmodSync).toHaveBeenCalledWith(hookJsPath, 0o755);
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(expect.stringContaining('gemini-cli/after_tool_plan_hook.sh'), hookShPath);
+			expect(mockedFs.chmodSync).toHaveBeenCalledWith(hookShPath, 0o755);
 		});
 	});
 });
@@ -718,42 +698,44 @@ describe('unregisterGeminiCliPlanHook', () => {
 
 describe('hookManager orchestrator', () => {
 	describe('installHookScripts', () => {
-		it('creates REVIEWA_DIR and calls all install functions', () => {
+		it('creates REVIEWA_DIR and copies all hook scripts', () => {
 			installHookScripts();
 
 			expect(mockedFs.mkdirSync).toHaveBeenCalledWith(REVIEWA_DIR, { recursive: true });
 			// Claude hook.js + hook.sh
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(REVIEWA_DIR, 'hook.js'), expect.any(String), { mode: 0o755 }
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(
+				expect.stringContaining('claude-code/hook.js'), path.join(REVIEWA_DIR, 'hook.js')
 			);
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(REVIEWA_DIR, 'hook.sh'), expect.any(String), { mode: 0o755 }
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(
+				expect.stringContaining('claude-code/hook.sh'), path.join(REVIEWA_DIR, 'hook.sh')
 			);
 			// Plan hook files
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.js'), expect.any(String), { mode: 0o755 }
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(
+				expect.stringContaining('claude-code/post_tool_use_plan_hook.js'), path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.js')
 			);
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh'), expect.any(String), { mode: 0o755 }
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(
+				expect.stringContaining('claude-code/post_tool_use_plan_hook.sh'), path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh')
 			);
 			// Codex hook.py
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(REVIEWA_DIR, 'hook.py'), expect.any(String), { mode: 0o755 }
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(
+				expect.stringContaining('codex/hook.py'), path.join(REVIEWA_DIR, 'hook.py')
 			);
 			// Gemini before_model_insert_comments.js + .sh
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.js'), expect.any(String), { mode: 0o755 }
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(
+				expect.stringContaining('gemini-cli/before_model_insert_comments.js'), path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.js')
 			);
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.sh'), expect.any(String), { mode: 0o755 }
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(
+				expect.stringContaining('gemini-cli/before_model_insert_comments.sh'), path.join(GEMINI_HOOKS_DIR, 'before_model_insert_comments.sh')
 			);
 			// Gemini plan hook files
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(GEMINI_HOOKS_DIR, 'after_tool_plan_hook.js'), expect.any(String), { mode: 0o755 }
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(
+				expect.stringContaining('gemini-cli/after_tool_plan_hook.js'), path.join(GEMINI_HOOKS_DIR, 'after_tool_plan_hook.js')
 			);
-			expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-				path.join(GEMINI_HOOKS_DIR, 'after_tool_plan_hook.sh'), expect.any(String), { mode: 0o755 }
+			expect(mockedFs.copyFileSync).toHaveBeenCalledWith(
+				expect.stringContaining('gemini-cli/after_tool_plan_hook.sh'), path.join(GEMINI_HOOKS_DIR, 'after_tool_plan_hook.sh')
 			);
+			// All scripts get chmod 755
+			expect(mockedFs.chmodSync).toHaveBeenCalledTimes(9);
 		});
 	});
 

@@ -2,7 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { execSync } from 'child_process';
-import { REVIEWA_DIR, CLAUDE_HOOKS_DIR } from '../../types';
+import { REVIEWA_DIR, CLAUDE_HOOKS_DIR, CodingCliTool } from '../../types';
+import { copyHookScript } from '../scriptUtils';
 
 export function hasClaudeCode(): boolean {
   try {
@@ -13,142 +14,11 @@ export function hasClaudeCode(): boolean {
   }
 }
 
-const HOOK_JS_CONTENT = `#!/usr/bin/env node
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-
-const COMMENTS_DIR = path.join(require('os').homedir(), '.reviewa', 'v1', 'comments');
-
-function formatLineContent(comment) {
-	const prefix = comment.side === 'addition' ? '+' : comment.side === 'removal' ? '-' : '';
-	return prefix + comment.line_content;
-}
-
-async function main() {
-	const chunks = [];
-	for await (const chunk of process.stdin) {
-		chunks.push(chunk);
-	}
-	const input = JSON.parse(Buffer.concat(chunks).toString());
-	const cwd = input.cwd;
-
-	if (!cwd || !fs.existsSync(COMMENTS_DIR)) {
-		process.exit(0);
-	}
-
-	const files = fs.readdirSync(COMMENTS_DIR).filter(f => f.endsWith('.json'));
-	if (files.length === 0) {
-		process.exit(0);
-	}
-
-	const matchedComments = [];
-
-	for (const file of files) {
-		const filePath = path.join(COMMENTS_DIR, file);
-		let comment;
-		try {
-			comment = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-		} catch {
-			continue;
-		}
-
-		const consumer = comment.intended_consumer;
-		if (consumer && consumer !== 'claude_code') {
-			continue;
-		}
-
-		const matchPath = comment.logical_abs_path || comment.abs_path;
-		if (!matchPath || !matchPath.startsWith(cwd)) {
-			continue;
-		}
-
-		matchedComments.push({ comment, filePath });
-	}
-
-	if (matchedComments.length === 0) {
-		process.exit(0);
-	}
-
-	matchedComments.sort((a, b) => (a.comment.created_at || '').localeCompare(b.comment.created_at || ''));
-
-	const parts = [];
-	for (const { comment } of matchedComments) {
-		const displayPath = comment.abs_path.startsWith(cwd) ? path.relative(cwd, comment.abs_path) : comment.abs_path;
-		const formatted = formatLineContent(comment);
-		parts.push('In \\\`' + displayPath + '\\\` at line ' + comment.line_number + ':\\n\\\`\\\`\\\`\\n' + formatted + '\\n\\\`\\\`\\\`\\n' + comment.content);
-	}
-
-	const additionalContext = parts.join('\\n\\n');
-
-	for (const { filePath } of matchedComments) {
-		try {
-			fs.unlinkSync(filePath);
-		} catch {}
-	}
-
-	const output = {
-		hookSpecificOutput: {
-			hookEventName: 'UserPromptSubmit',
-			additionalContext,
-		},
-	};
-	process.stdout.write(JSON.stringify(output));
-}
-
-main().catch(() => process.exit(0));
-`;
-
-const HOOK_SH_CONTENT = `#!/bin/bash
-exec node "$HOME/.reviewa/v1/hook.js"
-`;
-
-const PLAN_HOOK_JS_CONTENT = `#!/usr/bin/env node
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-
-const CLAUDE_PLANS_PATTERN = /[\\/]\\.claude[\\/]plans[\\/][^\\/]+\\.md$/;
-const METADATA_DIR = path.join(require('os').homedir(), '.reviewa', 'v1', 'claude', 'plan-metadata');
-
-async function main() {
-	const chunks = [];
-	for await (const chunk of process.stdin) {
-		chunks.push(chunk);
-	}
-	const input = JSON.parse(Buffer.concat(chunks).toString());
-	const filePath = input.tool_input?.file_path || '';
-
-	if (!CLAUDE_PLANS_PATTERN.test(filePath)) {
-		process.exit(0);
-	}
-
-	const basename = path.basename(filePath);
-	const planName = basename.replace(/\\.md$/, '');
-	fs.mkdirSync(METADATA_DIR, { recursive: true });
-	fs.writeFileSync(
-		path.join(METADATA_DIR, planName + '.json'),
-		JSON.stringify({ cwd: input.cwd, abs_path: filePath, created_at: new Date().toISOString() })
-	);
-}
-
-main().catch(() => process.exit(0));
-`;
-
-const PLAN_HOOK_SH_CONTENT = `#!/bin/bash
-exec node "$HOME/.reviewa/v1/claude/hooks/post_tool_use_plan_hook.js"
-`;
-
 export function installClaudeCodePlanHookScript(): void {
   fs.mkdirSync(CLAUDE_HOOKS_DIR, { recursive: true });
 
-  const hookJsPath = path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.js');
-  fs.writeFileSync(hookJsPath, PLAN_HOOK_JS_CONTENT, { mode: 0o755 });
-
-  const hookShPath = path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh');
-  fs.writeFileSync(hookShPath, PLAN_HOOK_SH_CONTENT, { mode: 0o755 });
+  copyHookScript(CodingCliTool.ClaudeCode, 'post_tool_use_plan_hook.js', path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.js'));
+  copyHookScript(CodingCliTool.ClaudeCode, 'post_tool_use_plan_hook.sh', path.join(CLAUDE_HOOKS_DIR, 'post_tool_use_plan_hook.sh'));
 }
 
 function isReviewaPlanHookEntry(entry: unknown): boolean {
@@ -256,11 +126,8 @@ export function unregisterClaudeCodePlanHook(): void {
 }
 
 export function installClaudeCodeHookScript(): void {
-  const hookJsPath = path.join(REVIEWA_DIR, 'hook.js');
-  fs.writeFileSync(hookJsPath, HOOK_JS_CONTENT, { mode: 0o755 });
-
-  const hookShPath = path.join(REVIEWA_DIR, 'hook.sh');
-  fs.writeFileSync(hookShPath, HOOK_SH_CONTENT, { mode: 0o755 });
+  copyHookScript(CodingCliTool.ClaudeCode, 'hook.js', path.join(REVIEWA_DIR, 'hook.js'));
+  copyHookScript(CodingCliTool.ClaudeCode, 'hook.sh', path.join(REVIEWA_DIR, 'hook.sh'));
 }
 
 export function registerClaudeCodeHook(): void {
